@@ -244,6 +244,21 @@ aggregate(WR~sizegrp+Lake, data=lfdata, FUN=mean)
 
 Looks like Crooked has the heavist (by relative weight) fish in the trophy category. 
 
+## 6. By adjusting the width of the length bin (shiny app), reassess your comparison of length frequency across the lakes.
+
+### Which length bin do you feel is the most appropriate for comparing length frequencies and why?
+
+I found the 6mm bin to be the most helpful. As you increase the length bin you start to lose some of the finer grained splits in each of the more aggregate modes. For example the lower sizes in Disston actually split into two peaks which becomes practically invisible at larger length bins. However going below 6mm just makes every single bin look like some kind of pattern. I.e. there's no real way to tell the difference between pattern and noise.
+
+### Which of the statistical tests ($\chi^2$ test, Kolmogorov-Smirnov test) are affected by the choice of length bin?
+Varying the length bin in the app I don't actually see any differences in either of the tests across any of the comparisons. However given KS is comparing distributions I suspsect that as the bin size becomes larger the test statistic becomes more course and the KS test would become less sensitive. I believe this was also mentioned in lecture - binning is the only way to make KS make sense.
+
+## 7. By showing the density estimate and adjusting the bandwidth, compare the density plots to the histograms.
+
+### Which visualization method do you feel does a better job of showing the differences between the lakes?
+While I find the detail in the histograms really useful for understanding the specifics about *each* lake I find the density plot to be better at helping me seeing the difference *between* lakes. The general patterns in modes and skews around those modes is easier to see with the density plot.
+
+
 ## 8. Use an ANOVA to assess differences in the mean length among the three lakes
 
 For the overal comparison:
@@ -293,7 +308,7 @@ Overall these results are similar to our $\chi^2$ test. However the likelihoods 
 
 An ANOVA assumes that the statistic being tested is normally distributed. We have some pretty extreme right hand skew here and obviously fish cannot actually be less than 0 (mm) in length. So the assumption that length is normally distributed is definitely violated here.
 
-## 9. Using the lenghts and weights of each fish in each lake:
+## 9. Using the lengths and weights of each fish in each lake:
 
 ### Fit a length weight relationship for each lake and report the length-weight relationship parameters.
 
@@ -359,9 +374,34 @@ with(
 )
 ```
 
-### What might the dispersion of the hisotgram tell us about the population_dynamics
+### What might the dispersion of the histogram tell us about the population dynamics
 
 - Disston seems to have a higher relative frequency of heavier fish. This seems to imply that they aren't getting crowded up by loads of smaller fish or that they are in fact predating on the smaller population (these are opportunistic predators after all).
 - In constrast both Annie and Crooked largely top out at 1000 (g) which would seem to imply that do to competitive pressure amongst the younger age group none are really able to get the nutrition to get to the larger size classes?
 - It's also possible that the difference here is in some kind of predation selectivity difference between the lakes?
 
+## 10. Using the R-Shiny application, interpret the GLM results.
+
+### What are the lengths that the GLM predicted CDF does a good job of predicting?
+The GLM does a pretty good job of predicting lengths above 300mm. For Annie and Disston it also does relatively well for 250-300mm. 
+
+### What are the lengths that the GLM predicted CDF does a bad job of predicting?
+The GLM does quite poorly on everything between 250mm. This makes sense as there's a lot of steep slope to plateu patterns in the lower lengths. In addition none of the lengths really get below 100 which the GLM has a hard time predicting.
+
+### Does your answer change as a function of the chosen width of the length bin? If so, how?
+In the extreme where we set the length bin as high as possible (40mm) the points get smoothed out to such an extent that that steep slope to plateu pattern dissapears allowing the GLM to predict well below 300mm. However the GLM still cannot get down to 0\% at ~100mm and so still fails to predict below 150mm or so. However at this level of binning, all the interesting relationships are gone!
+
+
+### Using the GLM coefficient table, which parameters differ between lakes?
+Between Annie and Crooked the main difference seems to be in the Intercept (-4.9 vs -5.3) rather than the slope (0.02 v 0.019). For Disston both the slope and intercept are quite different from the other lakes.
+
+
+## 11. Using the R-Shiny application or your previous analysis, which statistical test would you choose to assess differences in length frequencies between the lakes and why?
+
+From all we've done here it's pretty clear to me that the only test with assumptions that match up to our data is the $\chi^2$ test. 
+
+- The ANOVA assumes normality that clearly isn't there. 
+- The GLM is too simple to capture the interesting relationships in length frequency (which is what distinguishes one lake from the next). 
+- The KS is just far too sensitive to tell us anything meaningful. 
+
+The $\chi^2$ not only has good assumptions built in but also passes the sniff test after all of this plotting. 
