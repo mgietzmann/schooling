@@ -1,0 +1,203 @@
+---
+title: FAS6337C - Lab 1
+---
+
+# Testing for Differences in Population Size Structure
+
+Data for this laboratory are from Largemouth Bass Micropterus salmoides and Florida Bass Micropterus floridanus collected at Lakes Annie, Crooked, and Disston, Florida in 2002. Fish were collected with 20-min electrofishing transects. 
+
+```{r}
+setwd("/workspaces/schooling/population_dynamics/lab_1/") 
+lfdata <- read.table("data/LMB_size_structure.txt", header=T, sep="") 
+head(lfdata)
+```
+
+```{r}
+# a nice function from Prof. Siders
+col2rgbA<-function(color,transparency)
+{
+  rgb(t(col2rgb(color))/255,alpha=transparency) 
+}
+
+# get colors for our lakes (Annie, Crooked, and Disston)
+col.lk <- col2rgbA(c('yellow','red','blue'), 0.5)
+```
+## 1. Using the length frequency for each lake:
+
+### Make a histogram of the length frequency for each lake
+
+```{r}
+with(
+    lfdata, {
+        xlim=range(TL)
+        hist(
+            TL[Lake=="ANN"], main="Annie", col=col.lk[1],
+            xlim=xlim, xlab="Length (mm)"
+        )
+        hist(
+            TL[Lake=="CRO"], main="Crooked", col=col.lk[2],
+            xlim=xlim, xlab="Length (mm)"
+        )
+        hist(
+            TL[Lake=="DIS"], main="Disston", col=col.lk[3],
+            xlim=xlim, xlab="Length (mm)"
+        )
+    }
+)
+```
+
+### Make a density plot of length frequency for each lake
+
+```{r}
+with(
+    lfdata, {
+        densAnn <- density(TL[Lake=="ANN"])
+        densCro <- density(TL[Lake=="CRO"])
+        densDis <- density(TL[Lake=="DIS"])
+        xlim <- range(densAnn$x, densCro$x, densDis$x)
+        ylim <- range(densAnn$y, densCro$y, densDis$y)
+        plot(
+            densAnn, xlim=xlim, ylim=ylim, xlab="Length (mm)",
+            main="Density Plot of Length (mm) by Lake",
+            panel.first = grid() 
+        )
+        polygon(densAnn, density=-1, col=col.lk[1])
+        polygon(densCro, density=-1, col=col.lk[2])
+        polygon(densDis, density=-1, col=col.lk[3])
+    }
+)
+legend("topright", legend=c("Annie","Crooked","Disston"),
+       fill=col.lk)
+```
+
+### Do there appear to be differences in size structure?
+Absolutely! The density plot provides the nicest summary of this in my opinion. Couple of interesting observations:
+
+1. While all three lakes seem to have fish getting up to 600-700 mm Disston takes the long tails from the other distributions to another level.
+2. All three lakes are roughly bimodal but the locations of the peaks are different in quite interesting ways. It seems each lake shares a peak with another lake but not both peaks. Very odd.
+3. Annie and Crooked seem to have inverted relationship around 200 - 400 mm. They peak on opposite sides of the range and then trough off.
+
+## 2. Create a new column of class *factor* that groups TL into the following groupings with the appropriate labels: (nothing needs to be reported for this question).
+
+- Small: [0, 200)
+- Quality: [200, 300)
+- Preferred: [300, 380)
+- Memorable: [380, 450)
+- Trophy: [450, )
+
+```{r}
+lfdata$sizegrp <- cut(
+    lfdata$TL, breaks=c(0, 200, 300, 380, 450, Inf),
+    labels=c("S","Q","P","M","T"), right=FALSE
+)
+head(lfdata)
+```
+
+## 3. Use a $\chi^2$ test to test if the proportion of fish in each length group varies among the three lakes.
+
+### Report the observed proportion and the expected proportion of fish in each length group by lake.
+```{r}
+size_groups_by_lake <- xtabs(~sizegrp+Lake, data=lfdata)
+size_groups_by_lake
+```
+
+We find the observed proportion of fish in each length by lake as:
+```{r}
+prop_by_lake <- prop.table(size_groups_by_lake, margin=2)
+prop_by_lake
+```
+
+The expected is just the total proportion per size group across all three lakes. 
+```{r}
+size_groups <- xtabs(~sizegrp, data=lfdata)
+size_groups
+```
+
+```{r}
+prop_overall <- prop.table(size_groups)
+prop_overall
+```
+
+And we can see the differences between observed and expected with:
+```{r}
+sweep(prop_by_lake, 1, prop_overall, "-")
+```
+
+### Report the $\chi^2$ statistic, the degrees of freedom, and the $p$-value
+
+```{r}
+chisq.test(lfdata$Lake, lfdata$sizegrp) 
+```
+
+### Do the size structures differ between all the lakes? 
+
+Given the $p$-value is extremely low (<<0.05) I think it's safe to reject the null hypothesis that these lakes are the same. 
+
+### If so, use pairwise $\chi^2$ tests to test if each lake's length frequency differs from one another (three $\chi^2$ tests need to be reported).
+
+#### Annie vs Crooked
+
+```{r}
+arr <- c("ANN", "CRO") 
+chisq.test(
+    lfdata$Lake[lfdata$Lake %in% arr ], 
+    lfdata$sizegrp[lfdata$Lake %in% arr ])
+```
+
+#### Annie vs Disston
+
+```{r}
+arr <- c("ANN", "DIS") 
+chisq.test(
+    lfdata$Lake[lfdata$Lake %in% arr ], 
+    lfdata$sizegrp[lfdata$Lake %in% arr ])
+```
+
+#### Crooked vs Disston
+
+```{r}
+arr <- c("CRO", "DIS")
+chisq.test(
+    lfdata$Lake[lfdata$Lake %in% arr ], 
+    lfdata$sizegrp[lfdata$Lake %in% arr ])
+```
+
+
+While we would with a ($p$ << 0.05) reject all three null hypotheses it is interesting to note just how much Disston is dislike the others. 
+
+## 4. Use a Kolmogorov-Smirnov test between pairs of lakes.
+
+#### Annie vs Crooked
+
+```{r}
+arr <- c("ANN", "CRO") 
+ks.test(
+    as.integer(factor(lfdata$Lake[lfdata$Lake %in% arr ], levels=arr)), 
+    as.integer(lfdata$sizegrp[lfdata$Lake %in% arr ])
+)
+```
+
+#### Annie vs Disston
+
+```{r}
+arr <- c("ANN", "DIS") 
+ks.test(
+    as.integer(factor(lfdata$Lake[lfdata$Lake %in% arr ], levels=arr)), 
+    as.integer(lfdata$sizegrp[lfdata$Lake %in% arr ])
+)
+```
+
+#### Crooked vs Disston
+
+```{r}
+arr <- c("CRO", "DIS")
+ks.test(
+    as.integer(factor(lfdata$Lake[lfdata$Lake %in% arr ], levels=arr)), 
+    as.integer(lfdata$sizegrp[lfdata$Lake %in% arr ])
+)
+```
+
+
+### Does this analysis give the same results as you found in question \#3?
+
+This test is really rather sensitive. It considers each test statistic to have a near zero $p$-value. For the comparisons against Disston this follows what we found in \#3 but for the Annie vs Crooked comparison this test is clearly far too sensitive.
