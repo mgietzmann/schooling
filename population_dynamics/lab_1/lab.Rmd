@@ -201,3 +201,167 @@ ks.test(
 ### Does this analysis give the same results as you found in question \#3?
 
 This test is really rather sensitive. It considers each test statistic to have a near zero $p$-value. For the comparisons against Disston this follows what we found in \#3 but for the Annie vs Crooked comparison this test is clearly far too sensitive.
+
+
+## 5. Calculate the weight standard for each Largemouth Bass using a lenght-weight relationship from the Structural Indices PDF on Canvas.
+
+### Determine the relative weight using the weight standard and plot a histogram of the relative weight by lake.
+
+```{r}
+a <- 10^-5.316
+b <- 3.191
+lfdata$WS <- a*lfdata$TL^b
+lfdata$WR <- lfdata$Wt / lfdata$WS * 100
+head(lfdata)
+```
+
+```{r}
+wthA <- hist(lfdata$WR[which(lfdata$Lake=='ANN')],
+             breaks=seq(40,180,by=10),plot=FALSE)
+wthC <- hist(lfdata$WR[which(lfdata$Lake=='CRO')],
+             breaks=seq(40,180,by=10),plot=FALSE)
+wthD <- hist(lfdata$WR[which(lfdata$Lake=='DIS')],
+             breaks=seq(40,180,by=10),plot=FALSE)
+WtRelmat <- matrix(c(wthA$counts/sum(wthA$counts),
+                     wthC$counts/sum(wthC$counts),
+                     wthD$counts/sum(wthD$counts)), 
+                   nrow=3, ncol=length(wthA$counts), byrow=TRUE)
+rownames(WtRelmat) <- c('ANN','CRO','DIS')
+colnames(WtRelmat) <- paste0("br.",wthA$mids)
+
+barplot(WtRelmat, beside=TRUE, 
+        names.arg=wthA$mids, 
+        xlab='Relative Weight (%)',
+        ylab='Frequency (%)', 
+        col=col.lk, legend.text=c('ANN','CRO','DIS'))
+```
+
+### Which lake has the heaviest trophy-sized fish on average?
+
+```{r}
+aggregate(WR~sizegrp+Lake, data=lfdata, FUN=mean)
+```
+
+Looks like Crooked has the heavist (by relative weight) fish in the trophy category. 
+
+## 8. Use an ANOVA to assess differences in the mean length among the three lakes
+
+For the overal comparison:
+```{r}
+with(
+    lfdata, {
+        summary(aov(TL~Lake))
+    }
+)
+```
+
+Disston v Crooked
+```{r}
+pairwise <- data.frame(subset(lfdata, Lake!='ANN'))
+with(
+    pairwise, {
+        summary(aov(TL~Lake))
+    }
+)
+```
+
+Crooked v Annie
+```{r}
+pairwise <- data.frame(subset(lfdata, Lake!='DIS'))
+with(
+    pairwise, {
+        summary(aov(TL~Lake))
+    }
+)
+```
+
+Disston v Annie
+```{r}
+pairwise <- data.frame(subset(lfdata, Lake!='CRO'))
+with(
+    pairwise, {
+        summary(aov(TL~Lake))
+    }
+)
+```
+
+### How do these results compare to the $\chi^2$ test?
+
+Overall these results are similar to our $\chi^2$ test. However the likelihoods are quite different. In general the $p$-values are higher which Disston v Crooked really standing out.
+
+### What reservations do you have about the results of this test?
+
+An ANOVA assumes that the statistic being tested is normally distributed. We have some pretty extreme right hand skew here and obviously fish cannot actually be less than 0 (mm) in length. So the assumption that length is normally distributed is definitely violated here.
+
+## 9. Using the lenghts and weights of each fish in each lake:
+
+### Fit a length weight relationship for each lake and report the length-weight relationship parameters.
+
+First we're going to move to log space to create a linear relationship - $\log(W) = \log(a)+b*\log(TL)$
+
+```{r}
+lfdata$lWt <- log(lfdata$Wt, 10)
+lfdata$lTL <- log(lfdata$TL, 10)
+head(lfdata)
+```
+
+Next for each lake we can fit our linear model. The intercept and *lTL* coefficient correspond to our intercept and slope as in the resource from Canvas.
+
+Annie:
+```{r}
+df <- data.frame(subset(lfdata, Lake=="ANN"))
+with(
+    df, {
+        lm(lWt~lTL)
+    }
+)
+```
+
+Crooked:
+```{r}
+df <- data.frame(subset(lfdata, Lake=="CRO"))
+with(
+    df, {
+        lm(lWt~lTL)
+    }
+)
+```
+
+Disston:
+```{r}
+df <- data.frame(subset(lfdata, Lake=="DIS"))
+with(
+    df, {
+        lm(lWt~lTL)
+    }
+)
+```
+
+### Plot the observed weight on a histogram for each lake.
+```{r}
+with(
+    lfdata, {
+        breaks <- 50
+        xlim=range(Wt)
+        hist(
+            Wt[Lake=="ANN"], main="Annie", col=col.lk[1],
+            xlim=xlim, xlab="Length (g)", breaks=breaks
+        )
+        hist(
+            Wt[Lake=="CRO"], main="Crooked", col=col.lk[2],
+            xlim=xlim, xlab="Weight (g)", breaks=breaks
+        )
+        hist(
+            Wt[Lake=="DIS"], main="Disston", col=col.lk[3],
+            xlim=xlim, xlab="Weight (g)", breaks=breaks
+        )
+    }
+)
+```
+
+### What might the dispersion of the hisotgram tell us about the population_dynamics
+
+- Disston seems to have a higher relative frequency of heavier fish. This seems to imply that they aren't getting crowded up by loads of smaller fish or that they are in fact predating on the smaller population (these are opportunistic predators after all).
+- In constrast both Annie and Crooked largely top out at 1000 (g) which would seem to imply that do to competitive pressure amongst the younger age group none are really able to get the nutrition to get to the larger size classes?
+- It's also possible that the difference here is in some kind of predation selectivity difference between the lakes?
+
