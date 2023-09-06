@@ -9,3 +9,5 @@ RUN apt-get -y update && \
 
 RUN apt-get -y install r-base r-base-dev
 RUN apt-get -y install libxml2-dev libssl-dev pandoc
+
+RUN apt-get -y install texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra

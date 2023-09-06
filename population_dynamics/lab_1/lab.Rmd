@@ -1,5 +1,6 @@
 ---
 title: FAS6337C - Lab 1
+author: Marcel Gietzmann-Sanders
 ---
 
 # Testing for Differences in Population Size Structure
@@ -73,9 +74,9 @@ legend("topright", legend=c("Annie","Crooked","Disston"),
 ### Do there appear to be differences in size structure?
 Absolutely! The density plot provides the nicest summary of this in my opinion. Couple of interesting observations:
 
-1. While all three lakes seem to have fish getting up to 600-700 mm Disston takes the long tails from the other distributions to another level.
+1. While all three lakes seem to have fish getting up to 600-700 mm, Disston takes the long tails from the other distributions to another level.
 2. All three lakes are roughly bimodal but the locations of the peaks are different in quite interesting ways. It seems each lake shares a peak with another lake but not both peaks. Very odd.
-3. Annie and Crooked seem to have inverted relationship around 200 - 400 mm. They peak on opposite sides of the range and then trough off.
+3. Annie and Crooked seem to have inverted relationship around 200 - 400 mm. They peak on opposite sides of the range and then trough off in opposite directions as well.
 
 ## 2. Create a new column of class *factor* that groups TL into the following groupings with the appropriate labels: (nothing needs to be reported for this question).
 
@@ -107,7 +108,7 @@ prop_by_lake <- prop.table(size_groups_by_lake, margin=2)
 prop_by_lake
 ```
 
-The expected is just the total proportion per size group across all three lakes. 
+The expected proportion is just the total proportion per size group across all three lakes. 
 ```{r}
 size_groups <- xtabs(~sizegrp, data=lfdata)
 size_groups
@@ -138,72 +139,69 @@ Given the $p$-value is extremely low (<<0.05) I think it's safe to reject the nu
 #### Annie vs Crooked
 
 ```{r}
-arr <- c("ANN", "CRO") 
-chisq.test(
-    lfdata$Lake[lfdata$Lake %in% arr ], 
-    lfdata$sizegrp[lfdata$Lake %in% arr ])
+do_chisq_test <- function(lakes) {
+    mask <- lfdata$Lake %in% lakes
+    pairwise <- lfdata[mask,]
+    chisq.test(
+        pairwise$Lake,
+        pairwise$sizegrp
+    )
+}
+
+do_chisq_test(c("ANN", "CRO"))
 ```
 
 #### Annie vs Disston
 
 ```{r}
-arr <- c("ANN", "DIS") 
-chisq.test(
-    lfdata$Lake[lfdata$Lake %in% arr ], 
-    lfdata$sizegrp[lfdata$Lake %in% arr ])
+do_chisq_test(c("ANN", "DIS"))
 ```
 
 #### Crooked vs Disston
 
 ```{r}
-arr <- c("CRO", "DIS")
-chisq.test(
-    lfdata$Lake[lfdata$Lake %in% arr ], 
-    lfdata$sizegrp[lfdata$Lake %in% arr ])
+do_chisq_test(c("CRO", "DIS"))
 ```
 
 
-While we would with a ($p$ << 0.05) reject all three null hypotheses it is interesting to note just how much Disston is dislike the others. 
+While we would with a $p$ << 0.05 reject all three null hypotheses it is interesting to note just how much Disston is dislike the others. 
 
 ## 4. Use a Kolmogorov-Smirnov test between pairs of lakes.
 
 #### Annie vs Crooked
 
 ```{r}
-arr <- c("ANN", "CRO") 
-ks.test(
-    as.integer(factor(lfdata$Lake[lfdata$Lake %in% arr ], levels=arr)), 
-    as.integer(lfdata$sizegrp[lfdata$Lake %in% arr ])
-)
+do_ks_test <- function(lakes) {
+    mask <- lfdata$Lake %in% lakes
+    pairwise <- lfdata[mask,]
+    ks.test(
+        as.integer(factor(pairwise$Lake)),
+        as.integer(pairwise$sizegrp)
+    )
+}
+
+do_ks_test(c("ANN", "CRO"))
 ```
 
 #### Annie vs Disston
 
 ```{r}
-arr <- c("ANN", "DIS") 
-ks.test(
-    as.integer(factor(lfdata$Lake[lfdata$Lake %in% arr ], levels=arr)), 
-    as.integer(lfdata$sizegrp[lfdata$Lake %in% arr ])
-)
+do_ks_test(c("ANN", "DIS"))
 ```
 
 #### Crooked vs Disston
 
 ```{r}
-arr <- c("CRO", "DIS")
-ks.test(
-    as.integer(factor(lfdata$Lake[lfdata$Lake %in% arr ], levels=arr)), 
-    as.integer(lfdata$sizegrp[lfdata$Lake %in% arr ])
-)
+do_ks_test(c("CRO", "DIS"))
 ```
 
 
 ### Does this analysis give the same results as you found in question \#3?
 
-This test is really rather sensitive. It considers each test statistic to have a near zero $p$-value. For the comparisons against Disston this follows what we found in \#3 but for the Annie vs Crooked comparison this test is clearly far too sensitive.
+This test is really rather sensitive. It considers each test statistic to have a near zero $p$-value. For the comparisons against Disston this follows what we found in \#3 but for the Annie vs Crooked comparison this test is clearly far too sensitive (although the ultimate conclusion is the same).
 
 
-## 5. Calculate the weight standard for each Largemouth Bass using a lenght-weight relationship from the Structural Indices PDF on Canvas.
+## 5. Calculate the weight standard for each Largemouth Bass using a length-weight relationship from the Structural Indices PDF on Canvas.
 
 ### Determine the relative weight using the weight standard and plot a histogram of the relative weight by lake.
 
@@ -216,30 +214,43 @@ head(lfdata)
 ```
 
 ```{r}
-wthA <- hist(lfdata$WR[which(lfdata$Lake=='ANN')],
-             breaks=seq(40,180,by=10),plot=FALSE)
-wthC <- hist(lfdata$WR[which(lfdata$Lake=='CRO')],
-             breaks=seq(40,180,by=10),plot=FALSE)
-wthD <- hist(lfdata$WR[which(lfdata$Lake=='DIS')],
-             breaks=seq(40,180,by=10),plot=FALSE)
-WtRelmat <- matrix(c(wthA$counts/sum(wthA$counts),
-                     wthC$counts/sum(wthC$counts),
-                     wthD$counts/sum(wthD$counts)), 
-                   nrow=3, ncol=length(wthA$counts), byrow=TRUE)
+breaks <- seq(40,180,by=10)
+wthA <- hist(
+    lfdata$WR[lfdata$Lake=='ANN'],
+    breaks=breaks,plot=FALSE
+)
+wthC <- hist(
+    lfdata$WR[lfdata$Lake=='CRO'],
+    breaks=breaks,plot=FALSE
+)
+wthD <- hist(
+    lfdata$WR[lfdata$Lake=='DIS'],
+    breaks=breaks,plot=FALSE
+)
+WtRelmat <- matrix(
+    c(
+        wthA$counts/sum(wthA$counts) * 100,
+        wthC$counts/sum(wthC$counts) * 100,
+        wthD$counts/sum(wthD$counts) * 100
+    ), 
+    nrow=3, ncol=length(wthA$counts), byrow=TRUE
+)
 rownames(WtRelmat) <- c('ANN','CRO','DIS')
-colnames(WtRelmat) <- paste0("br.",wthA$mids)
+colnames(WtRelmat) <- paste0("br.", wthA$mids)
 
-barplot(WtRelmat, beside=TRUE, 
-        names.arg=wthA$mids, 
-        xlab='Relative Weight (%)',
-        ylab='Frequency (%)', 
-        col=col.lk, legend.text=c('ANN','CRO','DIS'))
+barplot(
+    WtRelmat, beside=TRUE, 
+    names.arg=wthA$mids, 
+    xlab='Relative Weight (%)',
+    ylab='Frequency (%)', 
+    col=col.lk, legend.text=c('ANN','CRO','DIS')
+)
 ```
 
 ### Which lake has the heaviest trophy-sized fish on average?
 
 ```{r}
-aggregate(WR~sizegrp+Lake, data=lfdata, FUN=mean)
+aggregate(WR~Lake, data=lfdata[lfdata$sizegrp == "T",], FUN=mean)
 ```
 
 Looks like Crooked has the heavist (by relative weight) fish in the trophy category. 
@@ -272,37 +283,31 @@ with(
 
 Disston v Crooked
 ```{r}
-pairwise <- data.frame(subset(lfdata, Lake!='ANN'))
-with(
-    pairwise, {
-        summary(aov(TL~Lake))
-    }
-)
+do_aov <- function(lakes) {
+    pairwise <- lfdata[lfdata$Lake %in% lakes,]
+    with(
+        pairwise, {
+            summary(aov(TL~Lake))
+        }
+    )
+}
+
+do_aov(c("CRO", "DIS"))
 ```
 
 Crooked v Annie
 ```{r}
-pairwise <- data.frame(subset(lfdata, Lake!='DIS'))
-with(
-    pairwise, {
-        summary(aov(TL~Lake))
-    }
-)
+do_aov(c("CRO", "ANN"))
 ```
 
 Disston v Annie
 ```{r}
-pairwise <- data.frame(subset(lfdata, Lake!='CRO'))
-with(
-    pairwise, {
-        summary(aov(TL~Lake))
-    }
-)
+do_aov(c("DIS", "ANN"))
 ```
 
 ### How do these results compare to the $\chi^2$ test?
 
-Overall these results are similar to our $\chi^2$ test. However the likelihoods are quite different. In general the $p$-values are higher which Disston v Crooked really standing out.
+Overall these results are similar to our $\chi^2$ test. However the likelihoods are quite different. In general the $p$-values are higher with Disston v Crooked really standing out.
 
 ### What reservations do you have about the results of this test?
 
@@ -324,32 +329,20 @@ Next for each lake we can fit our linear model. The intercept and *lTL* coeffici
 
 Annie:
 ```{r}
-df <- data.frame(subset(lfdata, Lake=="ANN"))
-with(
-    df, {
-        lm(lWt~lTL)
-    }
-)
+df <- lfdata[lfdata$Lake=="ANN",]
+lm(df$lWt~df$lTL)
 ```
 
 Crooked:
 ```{r}
-df <- data.frame(subset(lfdata, Lake=="CRO"))
-with(
-    df, {
-        lm(lWt~lTL)
-    }
-)
+df <- lfdata[lfdata$Lake=="CRO",]
+lm(df$lWt~df$lTL)
 ```
 
 Disston:
 ```{r}
-df <- data.frame(subset(lfdata, Lake=="DIS"))
-with(
-    df, {
-        lm(lWt~lTL)
-    }
-)
+df <- lfdata[lfdata$Lake=="DIS",]
+lm(df$lWt~df$lTL)
 ```
 
 ### Plot the observed weight on a histogram for each lake.
@@ -376,8 +369,8 @@ with(
 
 ### What might the dispersion of the histogram tell us about the population dynamics
 
-- Disston seems to have a higher relative frequency of heavier fish. This seems to imply that they aren't getting crowded up by loads of smaller fish or that they are in fact predating on the smaller population (these are opportunistic predators after all).
-- In constrast both Annie and Crooked largely top out at 1000 (g) which would seem to imply that do to competitive pressure amongst the younger age group none are really able to get the nutrition to get to the larger size classes?
+- Disston seems to have a higher relative frequency of heavier fish. This seems to imply that they aren't getting crowded out by loads of smaller fish or that they are in fact predating on the smaller population (these are opportunistic predators after all).
+- In constrast both Annie and Crooked largely top out at 1000 (g) which would seem to imply that due to competitive pressure amongst the younger age group none are really able to get the nutrition to get to the larger size classes?
 - It's also possible that the difference here is in some kind of predation selectivity difference between the lakes?
 
 ## 10. Using the R-Shiny application, interpret the GLM results.
@@ -386,7 +379,7 @@ with(
 The GLM does a pretty good job of predicting lengths above 300mm. For Annie and Disston it also does relatively well for 250-300mm. 
 
 ### What are the lengths that the GLM predicted CDF does a bad job of predicting?
-The GLM does quite poorly on everything between 250mm. This makes sense as there's a lot of steep slope to plateu patterns in the lower lengths. In addition none of the lengths really get below 100 which the GLM has a hard time predicting.
+The GLM does quite poorly on everything between 250mm. This makes sense as there's a lot of steep slope to plateu patterns in the lower lengths (quick accumulation of length in small fish). In addition none of the lengths really get below 100 which the GLM has a hard time predicting.
 
 ### Does your answer change as a function of the chosen width of the length bin? If so, how?
 In the extreme where we set the length bin as high as possible (40mm) the points get smoothed out to such an extent that that steep slope to plateu pattern dissapears allowing the GLM to predict well below 300mm. However the GLM still cannot get down to 0\% at ~100mm and so still fails to predict below 150mm or so. However at this level of binning, all the interesting relationships are gone!
@@ -404,4 +397,4 @@ From all we've done here it's pretty clear to me that the only test with assumpt
 - The GLM is too simple to capture the interesting relationships in length frequency (which is what distinguishes one lake from the next). 
 - The KS is just far too sensitive to tell us anything meaningful. 
 
-The $\chi^2$ not only has good assumptions built in but also passes the sniff test after all of this plotting. 
+The $\chi^2$ not only has good assumptions built in but also passes the sniff test after all of this plotting.
