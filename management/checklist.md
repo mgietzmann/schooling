@@ -1,10 +1,10 @@
-# The Fishery Itself
+# Atlantic Herring - Marcel Gietzmann-Sanders
 
 
 ## The Resource 
 The Atlantic Herring Fishery deals in [*Clupea harengus*](https://www.fisheries.noaa.gov/species/atlantic-herring) along the Atlantic coast of the United States. The range of the fishery extends from the Gulf of Maine down to the Carolinas<sup>[[1]](https://www.fisheries.noaa.gov/management-plan/atlantic-herring-management-plan)</sup> while the range of the species itself extends up into Canada as well. 
 
-<img src="management_areas.png" style="margin: 10px; width: 100%"/>
+<img src="management_areas.png" style="float: left; margin: 10px; width: 50%"/>
 
 The species is highly migratory with at least three phases present<sup>[[1]](https://www.fisheries.noaa.gov/management-plan/atlantic-herring-management-plan)</sup>.
 
@@ -22,7 +22,7 @@ These larvae are a source of food for many marine animals, are very much at the 
 
 All in all the density of these spawning clusters and the subsequent vulnterability of the larvae make herring very sensitive to spawning success and given aggregations are easy to fish spawning closers have been implemented in several states.
 
-<img src="spawning_closures.png" style="float: left; margin: 10px; width: 100%"/>
+<img src="spawning_closures.png" style="float: left; margin: 10px; width: 50%"/>
 
 Predation is another big vulnerability for herring as they are a food fish for many different species of marine mammal, fish, and bird. 
 
@@ -96,6 +96,78 @@ Finally there are a variety of other stakeholders present from conservation orga
 
 The stakeholders are quite heterogenous but it seems everyone is quite engaged and management is certaintly being kept up to date. Primary stakeholders are clearly largely commercial with little to no one taking home herring for personal use besides use as bait in certain cases. 
 
+
+## Markets
+
+>The Atlantic herring fishery is extremely valuable to the economy in the Northeast United States. Herring are sold frozen, salted, or canned as sardines in both U.S. and international markets and provide affordable bait to fishermen targeting lobster, blue crab, and tuna.<sup>[[5]](https://www.fisheries.noaa.gov/species/atlantic-herring#overview)</sup>
+
+<img src="bar_harbor_herring.png" style="float: left; margin: 10px; width: 50%"/>
+
+<img src="kippers.png" style="float: left; margin: 10px; width: 50%"/>
+
+A cursory tour of amazon.com shows us how this is marketed to consumers. Some of the descriptors used are:
+
+- Great in pastas and seafood recipes (NOAA also mentions this<sup>[[15]](https://www.fisheries.noaa.gov/species/atlantic-herring#seafood)</sup>)
+- Loads of omega-3
+- Sustainable
+- As coming from a specific place
+
+However quite a few of the sardine/herring packages don't do a great job of specifying where the fish is from or are coming from somewhere in Europe/Africa or the Pacific. 
+
+<img src="morocco.png" style="float: left; margin: 10px; width: 50%"/>
+
+<img src="pacific.png" style="float: left; margin: 10px; width: 50%"/>
+
+As bait they are sold wholesale<sup>[[16]](https://fishandbait.com/?s=herring)</sup>, to commericial fishermen<sup>[[17]](https://www.imifish.com/commercial-bait-products)</sup>, or packaged for more recreational use<sup>[[18]](https://fishfield.com/products/frozen-bait-supply-individual-pack.html?sku=RLH)</sup>, and many recreational fishermen have tips on buying from asian seafood markets or catching your own herring. 
+
+Other processors provide not just bait and seafood but also things like pet food<sup>[[19]](https://www.norpel.com/bait/)</sup>. In all cases however there is clearly a wide array of places you can source your herring from (Pacific, Europe/Africa, East Coast) and in many cases folks aren't very specific about where things are coming from. 
+
+In terms of prices herring for consumption seems to come in packages ranging from \$4 to \$8 and weighing 100 - 400g with ~200g being very common. Bait seems be about ~1 lb for $10 - $20<sup>[[20]](https://fishfield.com/products/jerrys-bait-premium-select-green-label-herring.html)</sup> <sup>[[18]](https://fishfield.com/products/frozen-bait-supply-individual-pack.html?sku=RLH)</sup> if you're buying it for recreational use. The wholesale price according to this platform<sup>[[21]](https://www.selinawamucii.com/insights/prices/united-states-of-america/herring/#:~:text=In%202023%2C%20the%20approximate%20wholesale,2.54%20per%20pound(lb).)</sup> is \$1-\$3 per pound which I'd suspect is pretty close to the commercial price of bait. It seems at least some people don't expect these prices to change dramatically in the near future<sup>[[22]](https://www.nationalfisherman.com/northeast/low-quotas-high-prices-for-herring-will-persist)</sup>. 
+
+It also looks like most of the bait herring goes to the lobster fishery<sup>[[23]](https://archimer.ifremer.fr/doc/00181/29252/27679.pdf)</sup> and someone put together a model of how that may affect herring economics. 
+
+I could not, for the life of me, find much on the costs for the US herring fishery but as a proxy the northeast herring fishery has a quite nice article on both the costs and how those costs are distributed amongst things like capital expenditure, labor, and fuel<sup>[[24]](https://www.frontiersin.org/articles/10.3389/fmars.2020.00625/full)</sup>. 
+
+<img src="spend_dist.png" style="float: left; margin: 10px; width: 100%"/>
+
+<img src="spend.png" style="float: left; margin: 10px; width: 100%"/>
+
+Capital expenditure as a fraction definitely seems to change a lot between these countries but things like fuel costs and labor costs are reasonably stable across the board and therefore may represent a reasonable proxy for atlantic herring fishing? I'd reallly like to find something more specific to the USA. 
+
+What I did find were plenty of suppliers of nets, boats, and the like who hide all of their prices and request that you call for consultation. 
+
+## Arrangements
+
+There are pretty clear rules around fishing herring<sup>[[7]](https://www.fisheries.noaa.gov/species/atlantic-herring#commercial)</sup>. Broadly summarizing:
+
+- Fishing is open to all with very large vessels requiring specific kinds of permits.
+- Each management area (see picture in [The Resource](#the-resource)) has specific allowable catch limits that total up to the overall ACL
+- Once the fishery nears the ACL herring possession limits go into effect (2000lb)
+- Once either haddock or river herring is nearing its catch limit a similar minimum possession limit goes into place in areas these species are likely to be caught
+- There are also some spawning closures that go into affect to help support the rebuilding of the population<sup>[[10]](https://www.asmfc.org/species/atlantic-herring)</sup>.
+
+There used to be prohibitions on gear use in certain areas but:
+
+> In 2021, Amendment 8 to the Atlantic Herring FMP prohibited the use of midwater trawl gear inshore of 12 nautical miles (22 km) from the U.S./Canada border to the Rhode Island/Connecticut border and inshore of 20 nautical miles (37 km) off the east coast of Cape Cod with the intent of addressing issues of localized depletion and user group conflict (86 FR 1810, January 11, 2021). However, as a result of litigation by midwater trawl industry members, a Court ruled that this measure was arbitrary and capricious and violated the Administrative Procedure Act based on a conclusion that the available scientific information did not sufficiently support that localized depletion was occurring.<sup>[[25]](https://www.federalregister.gov/documents/2023/03/23/2023-05797/magnuson-stevens-fishery-conservation-and-management-act-provisions-fisheries-of-the-northeastern)</sup>
+
+
+So clearly this is not a conflict free space. Fisheries are litigating. 
+
+The body responsible for these rules seems to be the Atlantic States Marine Fisheries Commission who then delegates work to committees that range from technical to advisory with a board overseeing proceedings. Some of this work is delegating to similar bodies in NOAA and the councils in each of the states. Every at least couple of years the technical board for the ASMFC meets and the lead board for the fishery in the ASMFC seems to meet a few times every year. Much of what these groups do is driven by the Magnuson Stevens Act as most of the work is directed toward fulfilling its provisions<sup>[[10]](https://www.asmfc.org/species/atlantic-herring)</sup>.  
+
+This governing body has been in place since before 2000 (reports list back to 1999) and is open to public comment. Clearly there is also litigation going on (see above) so fishermen are definitely involved in driving the direction of the fishery. 
+
+Given the ACL is the primary form of control here landings seem to be reasonably well monitored and for particularly vulnerable zones observers have to be on board<sup>[[7]](https://www.fisheries.noaa.gov/species/atlantic-herring#commercial)</sup>. Reporting is the responsibility of the fishermen and failing to comply will incur investigation from NOAA<sup>[[26]](https://www.greateratlantic.fisheries.noaa.gov/ro/fso/reports/herring/qm_herring.html)</sup>
+
+## Outcomes
+
+> In 2021, commercial landings of Atlantic herring totaled approximately 11 million pounds and were valued at $6.6 million, according to the NOAA Fisheries commercial fishing landings database.<sup>[[5]](https://www.fisheries.noaa.gov/species/atlantic-herring#overview)</sup>
+
+These are the lowest landings on record and while folks are still clearly out there making money all stakeholders are clearly concerned about the state of this fishery. It has been noted in recent stock assessments<sup>[[27]](https://www.asmfc.org/uploads/file/63cecac3AtlHerring_65thSAW_AssessmentSummaryReport_Aug2018.pdf)</sup> that there are serious inconsistencies in the modeling parameters and that as a result estimates of recruitment and stock size are highly uncertain. Some of this is attributed to the fact that the complex is treated as a whole when clearly from the herring life history it is really an amalgamation of several different complexes which are likely being fished at different levels. 
+
+In general it seems like fishing has stayed below the appropriate management points for the most part, however year after year the estimates of those points change rather dramatically<sup>[[28]](https://apps-st.fisheries.noaa.gov/stocksmart?stockname=Atlantic%20herring%20-%20Northwestern%20Atlantic%20Coast&stockid=10572)</sup>. 
+
+There is a clear issue in being able to model this stock and as a result we've ended up putting it into an dramatically depressed state. 
 
 
 
