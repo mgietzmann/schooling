@@ -1,0 +1,108 @@
+---
+title: FAS6337C - Lab 3
+author: Marcel Gietzmann-Sanders
+---
+
+# Growth Models in R
+
+```{r}
+setwd("/workspaces/schooling/population_dynamics/lab_3/")
+trout_data <- read.table("data/trout.txt", header=T, sep="") 
+head(trout_data)
+```
+
+```{r}
+ch_data <- na.omit(
+    trout_data[trout_data$bay == 'CharlotteHarbor',]
+)
+ir_data <- na.omit(
+    trout_data[trout_data$bay == 'IndianRiver',]
+)
+```
+
+```{r}
+with(
+    ch_data,
+    plot(tl~yearsold)
+)
+```
+
+```{r}
+do_least_squares_fit <- function(fish_data, Linf, vbk, tknot) {
+  tl <- as.numeric(fish_data$tl)
+  yearsold <- as.numeric(fish_data$yearsold)
+  result <- nls(
+    tl ~ Linf * (1 - exp(-vbk * (yearsold - tknot))),
+    data=fish_data,
+    start=list(Linf=Linf, vbk=vbk, tknot=tknot)
+  )
+  summary(result)
+}
+
+do_least_squares_fit(ch_data, 800, 0.2, -1.4)
+```
+
+```{r}
+predict_length <- function(yearsold, Linf, vbk, tknot) {
+  pred_tl <- Linf * (1 - exp(-vbk * (yearsold - tknot)))
+  return(pred_tl)
+}
+
+get_likelihood <- function(yearsold, tl, Linf, vbk, tknot, sig) {
+  pred_tl <- predict_length(yearsold, Linf, vbk, tknot)
+  NLL <- -1 * sum(dnorm(tl, pred_tl, sig, log=T), na.rm=T)
+  return(NLL)
+}
+
+do_likelihood_fit <- function(fish_data, Linf, vbk, tknot, sig) {
+  tl <- as.numeric(fish_data$tl)
+  yearsold <- as.numeric(fish_data$yearsold)
+  lLinf <- log(Linf)
+  lsig <- log(sig)
+
+  objective <- function(v) {
+    Linf <- exp(v[1])
+    vbk <- v[2]
+    tknot <- v[3]
+    sig <- exp(v[4])
+    NLL <- get_likelihood(yearsold, tl, Linf, vbk, tknot, sig)
+    return(NLL)
+  }
+
+  v <- c(lLinf, vbk, tknot, lsig)
+  fit <- optim(v, objective, hessian=T)
+  print("Fit Summary")
+  print(fit)
+
+
+  covm <- solve(fit$hessian)
+
+  pred <- c(
+    exp(fit$par[1]),
+    fit$par[2],
+    fit$par[3],
+    exp(fit$par[4])
+  )
+  print(pred)
+  return(list(pred, covm))
+}
+
+result <- do_likelihood_fit(ch_data, 700, 0.2, -1.4, 40)
+pred_params <- result[[1]]
+covm <- result[[2]]
+age <- seq(0, 8, 1)
+pred_tl <- predict_length(
+  age, pred_params[1], pred_params[2], pred_params[3]
+)
+cbind(age, pred_tl)
+```
+
+```{r}
+plot(ch_data$tl~ch_data$yearsold)
+lines(pred_tl~age, col='red')
+```
+
+```{r}
+(stderr <- sqrt(diag(covm)))
+(corm <- cov2cor(covm))
+```
