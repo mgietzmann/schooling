@@ -564,4 +564,13 @@ Sharing $t_0$ makes sense but the $t_0$ here is certainly unbiological. Growth r
 
 | MinLL | MaxLL | Bias | Over | Under | Parameters |
 | ---   | ---   | ---  | ---  | ---   | ---        |
-| 0 | 0 | 0 | 0 | 0 | 0 | 
+| 300 (0.05) | $\infty$ | $<2$ years old undersampled | $<4$ | N/A | $L_{\infty}=914, k=0.178, t_0=-1.09, \sigma=110.0$ | 
+| 0 | 700 (0.05) | $>3$ years old undersampled | $0<age<3$ | $>3$ | $L_{\infty}=667, k=0.335, t_0=-0.39, \sigma=66.2$ |
+| 380 (0) | 480 (0) | Almost no sampling for age $>6$ or $<2$, extremely poor sampling across the board. | $<3$ | $>3$ | $L_{\infty}=446, k=0.939, t_0=-1.15, \sigma=26.4$ |
+| 380 (0) | 530 (0.03) | No sampling for age $<2$ biased toward middling or smaller fish throughout. | $<3$ | $>3$ | $L_{\infty}=532, k=0.222, t_0=-5.56, \sigma=40.2$ | 
+
+### Across scenarios, which had the biggest impact on L_∞? on k? on t_0? 
+
+- $L_{\infty}$ - Definitely case 3, the total lack of sampling of large fish threw things off entirely.
+- $k$ - Likewise case 3.
+- $t_0$ - case 4, the complete lack of samples on the low end with samples on the high end gave us a weird almost straight relationship between age and growth.
