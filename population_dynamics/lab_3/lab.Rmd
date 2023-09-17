@@ -5,26 +5,33 @@ author: Marcel Gietzmann-Sanders
 
 # Growth Models in R
 
+Data for this laboratory are from two Florida Spotted Seatrout Cynoscion nebulosus populations (Indian River and Charlotte Harbor). The data set contains only females from each population. Fish were collected from 1986 to 1988 by Murphy and Taylor (1994, Transactions of the American Fisheries Society 123:482-497).
+
 ```{r}
 setwd("/workspaces/schooling/population_dynamics/lab_3/")
 trout_data <- read.table("data/trout.txt", header=T, sep="") 
 head(trout_data)
 ```
 
+The objectives of this laboratory are:
+
+1. To determine the best growth model for each population and estimate L_∞, t_0, and k;
+2. Estimate the mean length at age for each population;
+3. Use an AIC model selection method to compare growth curves and parameters between populations.
+
+Please conduct the following analyses in R and answer the questions. Each question or bullet point should be responded to either with text, a table, or a plot. Use trout.txt as your data file.
+
+## 1. Use nonlinear least squares (nls) to estimate the von Bertalanffy growth parameters separately for Charlotte Harbor and for Indian River populations. 
+
 ```{r}
 ch_data <- na.omit(
     trout_data[trout_data$bay == 'CharlotteHarbor',]
 )
+ch_data <- ch_data[order(ch_data$yearsold),]
 ir_data <- na.omit(
     trout_data[trout_data$bay == 'IndianRiver',]
 )
-```
-
-```{r}
-with(
-    ch_data,
-    plot(tl~yearsold)
-)
+ir_data <- ir_data[order(ir_data$yearsold),]
 ```
 
 ```{r}
@@ -36,11 +43,97 @@ do_least_squares_fit <- function(fish_data, Linf, vbk, tknot) {
     data=fish_data,
     start=list(Linf=Linf, vbk=vbk, tknot=tknot)
   )
-  summary(result)
+  return(result)
 }
 
-do_least_squares_fit(ch_data, 800, 0.2, -1.4)
+ch_result = do_least_squares_fit(ch_data, 800, 0.2, -1.4)
+ir_result = do_least_squares_fit(ir_data, 950, 0.19, -1.2)
 ```
+
+```{r}
+summary(ch_result)
+```
+
+```{r}
+summary(ir_result)
+```
+
+
+```{r}
+ch_data$nls_tl <- ch_result$m$predict(ch_data$yearsold)
+ir_data$nls_tl <- ir_result$m$predict(ir_data$yearsold)
+
+ch_data$nls_res <- ch_data$tl - ch_data$nls_tl
+ir_data$nls_res <- ir_data$tl - ir_data$nls_tl
+
+head(ch_data)
+```
+
+### Plot the residuals against the predicted values from the nls for each population. 
+
+```{r}
+with(
+  ch_data, {
+    plot(
+      nls_res ~ nls_tl,
+      main='Charlotte Harbor Residuals Plot',
+      xlab='Predicted Length (mm)',
+      ylab='Actual - Predicted Length (mm)'
+    )
+  }
+)
+```
+
+```{r}
+with(
+  ir_data, {
+    plot(
+      nls_res ~ nls_tl,
+      main='Indian River Residuals Plot',
+      xlab='Predicted Length (mm)',
+      ylab='Actual - Predicted Length (mm)'
+    )
+  }
+)
+```
+
+```{r}
+with(
+  ch_data, {
+    plot(
+      tl ~ yearsold,
+      main='Charlotte Harbor Fit',
+      xlab='Years Old',
+      ylab='Length (mm)'
+    )
+    lines(nls_tl ~ yearsold, col='red')
+  }
+)
+```
+
+
+```{r}
+with(
+  ir_data, {
+    plot(
+      tl ~ yearsold,
+      main='Indian River Fit',
+      xlab='Years Old',
+      ylab='Length (mm)'
+    )
+    lines(nls_tl ~ yearsold, col='red')
+  }
+)
+```
+
+### Does it appear that a von Bertalanffy curve is reasonable for each population? 
+
+The conclusion here is the same as in the last lab. The fit is reasonable but far from ideal. There is a clear pattern from under predicting to overpredicting as length increases so there's definitely a pattern to the residuals that (in theory) could be captured in a better model. 
+
+There's also quite a lot of variance left in these estimates, and that variance itself is patterned. 
+
+## 2. For the Charlotte Harbor population, create a function that estimates the negative log likelihood of the normal distribution. Minimize the negative log likelihood of the normal distribution to estimate the parameters of the von Bertalanffy growth equation. 
+
 
 ```{r}
 predict_length <- function(yearsold, Linf, vbk, tknot) {
@@ -84,25 +177,175 @@ do_likelihood_fit <- function(fish_data, Linf, vbk, tknot, sig) {
     exp(fit$par[4])
   )
   print(pred)
-  return(list(pred, covm))
+  return(list(pred, covm, fit$par))
 }
 
-result <- do_likelihood_fit(ch_data, 700, 0.2, -1.4, 40)
-pred_params <- result[[1]]
-covm <- result[[2]]
-age <- seq(0, 8, 1)
-pred_tl <- predict_length(
-  age, pred_params[1], pred_params[2], pred_params[3]
+ch_ml_result <- do_likelihood_fit(ch_data, 800, 0.2, -1.4, 40)
+ch_pred_params <- ch_ml_result[[1]]
+ch_covm <- ch_ml_result[[2]]
+ch_ml_par <- ch_ml_result[[3]]
+
+ch_data$ml_tl <- predict_length(
+  ch_data$yearsold, ch_pred_params[1], ch_pred_params[2], ch_pred_params[3]
 )
-cbind(age, pred_tl)
+ch_data$ml_res <- ch_data$tl - ch_data$ml_tl
+```
+
+### Plot the residuals against the predicted values from the likelihood estimation
+
+```{r}
+with(
+  ch_data, {
+    plot(
+      ml_res ~ ml_tl,
+      main='Charlotte Harbor Residuals Plot',
+      xlab='Predicted Length (mm)',
+      ylab='Actual - Predicted Length (mm)'
+    )
+  }
+)
 ```
 
 ```{r}
-plot(ch_data$tl~ch_data$yearsold)
-lines(pred_tl~age, col='red')
+with(
+  ch_data, {
+    plot(
+      tl ~ yearsold,
+      main='Charlotte Harbor Fit',
+      xlab='Years Old',
+      ylab='Length (mm)'
+    )
+    lines(ml_tl ~ yearsold, col='red')
+  }
+)
+```
+
+### Does the likelihood estimation appear to return VBGM parameter estimates that are a reasonable model for the data? 
+
+$t_0$ is clearly off and the model seems to be overpredicting $L_{\infty}$. Furthermore there is clearly changing variance with both age and length so the $\sigma$ parameter is also contentious. Overall the fit to the data given is reasonable. 
+
+### Compare your estimates to the between the nls (question 1) and the likelihood estimation. 
+
+Besides having added $\sigma$ this is the same fit. So the estimates are the same.
+
+## 3. Generate the confidence intervals for each parameter from the model using the output from nls and the Hessian matrix from Optim. 
+
+### Report the confidence intervals for each parameter from each method in a table
+
+```{r}
+ml_stderr <- sqrt(diag(ch_covm))
+
+ALPHA <- 0.05
+ML_L95 <- (ch_ml_par - qnorm(1-(ALPHA/2)) * ml_stderr)
+ML_U95 <- (ch_ml_par + qnorm(1-(ALPHA/2)) * ml_stderr)
+ML_U95[1] <- exp(ML_U95[1])
+ML_L95[1] <- exp(ML_L95[1])
+ML_U95[4] <- exp(ML_U95[4])
+ML_L95[4] <- exp(ML_L95[4])
+```
+
+
+
+```{r}
+ch_nls_par <- summary(ch_result)$parameters[,1]
+ch_nls_stderr <- summary(ch_result)$parameters[,2]
+NLS_L95 <- (ch_nls_par - qnorm(1-(ALPHA/2)) * ch_nls_stderr)
+NLS_U95 <- (ch_nls_par + qnorm(1-(ALPHA/2)) * ch_nls_stderr)
+```
+
+
+```{r}
+NLS_U95['sig'] <- NaN
+NLS_L95['sig'] <- NaN
+rbind(ML_U95, ML_L95, NLS_U95, NLS_L95)
+```
+
+### Compare the estimated confidence intervals between methods. 
+
+$\sigma$ obviously offers no comparison as it is not in both methods. $t_0$ and $k$ are both very similar between the two methods. $L_{\infty}$ is the only one that stands out but it was fit as the log of itself during maximum likelihood estimation and so it's expected that the confidence interval for $L_{\infty}$ is asymmetric.
+
+## 4. Conduct the same analysis for the Indian River population (questions 1-3). Answer the same questions/bullet points. 
+
+
+```{r}
+ir_ml_result <- do_likelihood_fit(ir_data, 950, 0.19, -1.2, 40)
+ir_pred_params <- ir_ml_result[[1]]
+ir_covm <- ir_ml_result[[2]]
+ir_ml_par <- ir_ml_result[[3]]
+
+ir_data$ml_tl <- predict_length(
+  ir_data$yearsold, ir_pred_params[1], ir_pred_params[2], ir_pred_params[3]
+)
+ir_data$ml_res <- ir_data$tl - ir_data$ml_tl
+```
+
+### Plot the residuals against the predicted values from the likelihood estimation
+
+```{r}
+with(
+  ir_data, {
+    plot(
+      ml_res ~ ml_tl,
+      main='Indian River Residuals Plot',
+      xlab='Predicted Length (mm)',
+      ylab='Actual - Predicted Length (mm)'
+    )
+  }
+)
 ```
 
 ```{r}
-(stderr <- sqrt(diag(covm)))
-(corm <- cov2cor(covm))
+with(
+  ir_data, {
+    plot(
+      tl ~ yearsold,
+      main='Indian River Fit',
+      xlab='Years Old',
+      ylab='Length (mm)'
+    )
+    lines(ml_tl ~ yearsold, col='red')
+  }
+)
 ```
+
+### Does the likelihood estimation appear to return VBGM parameter estimates that are a reasonable model for the data? 
+
+$t_0$ is clearly off again. There is still clearly changing variance with both age and length so the $\sigma$ parameter is also contentious. Overall the fit to the data given is reasonable. 
+
+### Compare your estimates to the between the nls (question 1) and the likelihood estimation. 
+
+Besides having added $\sigma$ this is the same fit. So the estimates are the same.
+
+### Report the confidence intervals for each parameter from each method in a table
+
+```{r}
+ml_stderr <- sqrt(diag(ir_covm))
+
+ALPHA <- 0.05
+ML_L95 <- (ir_ml_par - qnorm(1-(ALPHA/2)) * ml_stderr)
+ML_U95 <- (ir_ml_par + qnorm(1-(ALPHA/2)) * ml_stderr)
+ML_U95[1] <- exp(ML_U95[1])
+ML_L95[1] <- exp(ML_L95[1])
+ML_U95[4] <- exp(ML_U95[4])
+ML_L95[4] <- exp(ML_L95[4])
+```
+
+
+
+```{r}
+ir_nls_par <- summary(ir_result)$parameters[,1]
+ir_nls_stderr <- summary(ir_result)$parameters[,2]
+NLS_L95 <- (ir_nls_par - qnorm(1-(ALPHA/2)) * ir_nls_stderr)
+NLS_U95 <- (ir_nls_par + qnorm(1-(ALPHA/2)) * ir_nls_stderr)
+```
+
+
+```{r}
+NLS_U95['sig'] <- NaN
+NLS_L95['sig'] <- NaN
+rbind(ML_U95, ML_L95, NLS_U95, NLS_L95)
+```
+
+### Compare the estimated confidence intervals between methods. 
+
+It's interesting that here all parameters are extremely close in terms of bounds - even $L_{\infty}$.
