@@ -376,7 +376,7 @@ head(trout_data)</code></pre>
 ## 6 CharlotteHarbor 410 FALSE      1   1    1.652</code></pre>
 <p>The objectives of this laboratory are:</p>
 <ol style="list-style-type: decimal">
-<li>To determine the best growth model for each population and estimate L_∞, t_0, and k;</li>
+<li>To determine the best growth model for each population and estimate <span class="math inline">\(L_{\infty}\)</span>, <span class="math inline">\(t_0\)</span>, and <span class="math inline">\(k\)</span>;</li>
 <li>Estimate the mean length at age for each population;</li>
 <li>Use an AIC model selection method to compare growth curves and parameters between populations.</li>
 </ol>
@@ -502,7 +502,7 @@ head(ch_data)</code></pre>
 <div id="does-it-appear-that-a-von-bertalanffy-curve-is-reasonable-for-each-population" class="section level3">
 <h3>Does it appear that a von Bertalanffy curve is reasonable for each population?</h3>
 <p>The conclusion here is the same as in the last lab. The fit is reasonable but far from ideal. There is a clear pattern from under predicting to overpredicting as length increases so there’s definitely a pattern to the residuals that (in theory) could be captured in a better model.</p>
-<p>There’s also quite a lot of variance left in these estimates, and that variance itself is patterned.</p>
+<p>There’s also quite a lot of variance left in these estimates, and that variance itself is patterned with our gear selectivity creating variance toward smaller predicted lengths.</p>
 </div>
 </div>
 <div id="for-the-charlotte-harbor-population-create-a-function-that-estimates-the-negative-log-likelihood-of-the-normal-distribution.-minimize-the-negative-log-likelihood-of-the-normal-distribution-to-estimate-the-parameters-of-the-von-bertalanffy-growth-equation." class="section level2">
@@ -648,7 +648,7 @@ rbind(ML_U95, ML_L95, NLS_U95, NLS_L95)</code></pre>
 </div>
 <div id="compare-the-estimated-confidence-intervals-between-methods." class="section level3">
 <h3>Compare the estimated confidence intervals between methods.</h3>
-<p><span class="math inline">\(\sigma\)</span> obviously offers no comparison as it is not in both methods. <span class="math inline">\(t_0\)</span> and <span class="math inline">\(k\)</span> are both very similar between the two methods. <span class="math inline">\(L_{\infty}\)</span> is the only one that stands out but it was fit as the log of itself during maximum likelihood estimation and so it’s expected that the confidence interval for <span class="math inline">\(L_{\infty}\)</span> is asymmetric.</p>
+<p><span class="math inline">\(\sigma\)</span> obviously offers no comparison as it is not in both methods. <span class="math inline">\(t_0\)</span> and <span class="math inline">\(k\)</span> are both very similar between the two methods. <span class="math inline">\(L_{\infty}\)</span> is the only one that stands out but it was fit as the log of itself during maximum likelihood estimation and so it’s expected that the confidence interval for <span class="math inline">\(L_{\infty}\)</span> is asymmetric in the likelihood estimation.</p>
 </div>
 </div>
 <div id="conduct-the-same-analysis-for-the-indian-river-population-questions-1-3.-answer-the-same-questionsbullet-points." class="section level2">
@@ -747,7 +747,7 @@ rbind(ML_U95, ML_L95, NLS_U95, NLS_L95)</code></pre>
 </div>
 <div id="compare-the-estimated-confidence-intervals-between-methods.-1" class="section level3">
 <h3>Compare the estimated confidence intervals between methods.</h3>
-<p>It’s interesting that here all parameters are extremely close in terms of bounds - even <span class="math inline">\(L_{\infty}\)</span>.</p>
+<p>It’s interesting that here all parameters are extremely close in terms of bounds - even <span class="math inline">\(L_{\infty}\)</span>. However the confidence interval for <span class="math inline">\(L_{\infty}\)</span> is still asymmetric for the maximum likelihood estimation.</p>
 </div>
 </div>
 <div id="using-the-likelihood-based-model-parameter-estimates-for-each-population-calculate-the-mean-length-at-each-age-for-age-0-to-age-8-for-each-population." class="section level2">
@@ -1137,8 +1137,8 @@ cols &lt;- c(
 </div>
 </div>
 </div>
-<div id="calculate-the-aic-for-all-the-models-you-trialed-report-your-aic-table-to-answer-questions-6-7-and-8." class="section level2">
-<h2>8. Calculate the ∆AIC for all the models you trialed (report your AIC table to answer questions 6, 7, and 8).</h2>
+<div id="calculate-the-deltaaic-for-all-the-models-you-trialed-report-your-aic-table-to-answer-questions-6-7-and-8." class="section level2">
+<h2>8. Calculate the <span class="math inline">\(\Delta\)</span>AIC for all the models you trialed (report your AIC table to answer questions 6, 7, and 8).</h2>
 <pre class="r"><code>aic_table &lt;- data.frame(rbind(
     all_free,
     all_shared,
@@ -1148,7 +1148,10 @@ cols &lt;- c(
     sig_shared
 ))
 colnames(aic_table) &lt;- c(&#39;cols&#39;, &#39;dof&#39;, &#39;nll&#39;, &#39;aic&#39;)
-(aic_table &lt;- aic_table[order(aic_table$aic),])</code></pre>
+
+aic_table$aic &lt;- as.numeric(aic_table$aic)
+aic_table$delta &lt;- aic_table$aic - min(aic_table$aic)
+(aic_table &lt;- aic_table[order(aic_table$delta),])</code></pre>
 <pre><code>##                                                                       cols dof
 ## vbk_shared             ch_Linf,vbk,ch_tknot,ch_sig,ir_Linf,ir_tknot,ir_sig   7
 ## tknot_shared             ch_Linf,ch_vbk,tknot,ch_sig,ir_Linf,ir_vbk,ir_sig   7
@@ -1156,24 +1159,24 @@ colnames(aic_table) &lt;- c(&#39;cols&#39;, &#39;dof&#39;, &#39;nll&#39;, &#39;a
 ## Linf_shared             Linf,ch_vbk,ch_tknot,ch_sig,ir_vbk,ir_tknot,ir_sig   7
 ## sig_shared             ch_Linf,ch_vbk,ch_tknot,sig,ir_Linf,ir_vbk,ir_tknot   7
 ## all_shared                                              Linf,vbk,tknot,sig   4
-##                           nll              aic
-## vbk_shared   12236.3934261983 24486.7868523965
-## tknot_shared 12236.8592624778 24487.7185249557
-## all_free      12236.300720374 24488.6014407481
-## Linf_shared  12239.5224904294 24493.0449808588
-## sig_shared    12295.979579067  24605.959158134
-## all_shared   12569.0570197932 25146.1140395863</code></pre>
+##                           nll      aic       delta
+## vbk_shared   12236.3934261983 24486.79   0.0000000
+## tknot_shared 12236.8592624778 24487.72   0.9316726
+## all_free      12236.300720374 24488.60   1.8145884
+## Linf_shared  12239.5224904294 24493.04   6.2581285
+## sig_shared    12295.979579067 24605.96 119.1723057
+## all_shared   12569.0570197932 25146.11 659.3271872</code></pre>
 <div id="which-hypothesis-had-the-most-support-based-on-aic-1" class="section level3">
 <h3>Which hypothesis had the most support based on AIC?</h3>
 <p>Sharing <span class="math inline">\(k\)</span> had the best support.</p>
 </div>
 <div id="what-are-the-top-models-based-on-the-aic" class="section level3">
 <h3>What are the top models based on the AIC?</h3>
-<p>Sharing <span class="math inline">\(k\)</span>, sharing <span class="math inline">\(t_0\)</span>, and all free were the best.</p>
+<p>Sharing <span class="math inline">\(k\)</span>, sharing <span class="math inline">\(t_0\)</span>, sharing <span class="math inline">\(L_{\infty}\)</span>, and all free were the best.</p>
 </div>
 <div id="do-these-top-models-make-sense-given-the-biology-of-spotted-seatrout" class="section level3">
 <h3>Do these top models make sense given the biology of Spotted Seatrout?</h3>
-<p>Sharing <span class="math inline">\(t_0\)</span> makes sense but the <span class="math inline">\(t_0\)</span> here is certainly unbiological. Growth rates would definitely change from place to place, but I think we’re still able to fit reasonably well because <span class="math inline">\(t_0\)</span> and <span class="math inline">\(L_{/infty}\)</span> are still free in the shared <span class="math inline">\(k\)</span> case and we know these are all extremely correlated with one another. In general across these models the wild <span class="math inline">\(t_0\)</span> makes these rather unbiological.</p>
+<p>Sharing <span class="math inline">\(t_0\)</span> makes sense but the <span class="math inline">\(t_0\)</span> here is certainly unbiological. Growth rates would definitely change from place to place, but I think we’re still able to fit reasonably well because <span class="math inline">\(t_0\)</span> and <span class="math inline">\(L_{\infty}\)</span> are still free in the shared <span class="math inline">\(k\)</span> case and we know these are all extremely correlated with one another. Same argument for <span class="math inline">\(L_{\infty}\)</span>, I’d expect it to be different but the model is likely taking advantage of the other parameters to still fit. In general across these models the wild <span class="math inline">\(t_0\)</span> makes these rather unbiological.</p>
 </div>
 </div>
 <div id="adjust-the-slot-limits-for-the-following-scenarios-and-answer-the-following-questions" class="section level2">
@@ -1232,8 +1235,8 @@ colnames(aic_table) &lt;- c(&#39;cols&#39;, &#39;dof&#39;, &#39;nll&#39;, &#39;a
 </tr>
 </tbody>
 </table>
-<div id="across-scenarios-which-had-the-biggest-impact-on-l_-on-k-on-t_0" class="section level3">
-<h3>Across scenarios, which had the biggest impact on L_∞? on k? on t_0?</h3>
+<div id="across-scenarios-which-had-the-biggest-impact-on-l_infty-on-k-on-t_0" class="section level3">
+<h3>Across scenarios, which had the biggest impact on <span class="math inline">\(L_{\infty}\)</span>? on <span class="math inline">\(k\)</span>? on <span class="math inline">\(t_0\)</span>?</h3>
 <ul>
 <li><span class="math inline">\(L_{\infty}\)</span> - Definitely case 3, the total lack of sampling of large fish threw things off entirely.</li>
 <li><span class="math inline">\(k\)</span> - Likewise case 3.</li>

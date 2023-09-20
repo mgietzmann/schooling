@@ -1,0 +1,144 @@
+---
+title: FAS6337C - Lab 4
+author: Marcel Gietzmann-Sanders
+---
+
+# Mortality
+
+
+```{r}
+library(lme4)
+
+col2rgbA<-function(color,transparency)
+{
+  rgb(t(col2rgb(color))/255,alpha=transparency)
+}
+```
+
+```{r}
+setwd("/workspaces/schooling/population_dynamics/lab_4/")
+age <- read.table("data/griffin age data.txt", header=TRUE, quote="\"", na.strings=".")
+trawl <- read.table("data/griffin trawl data.txt", header=TRUE, quote="\"", na.strings=".")
+trap <- read.table("data/trap net data.txt", header=TRUE, quote="\"", na.strings=".")
+```
+
+## Ages
+
+```{r}
+catch <- rbind(
+    data.frame(
+        Gear=trap$Gear,
+        TL = trap$TL
+    ),
+    data.frame(
+        Gear=rep("trawl", nrow(trawl)),
+        TL = trawl$TL
+    )
+)
+head(catch)
+```
+
+```{r}
+age$cmgrp <- floor(age$TL / 10)
+catch$cmgrp <- floor(catch$TL / 10)
+age_trawl <- age[age$Gear=="trawl",]
+age_trapnet <- age[age$Gear=="trapnet",]
+```
+
+```{r}
+trawl_ALK <- with(
+    age_trawl,
+    data.frame(
+        prop.table(
+            table(Rings, cmgrp),
+            margin=2
+        ),
+        stringsAsFactors = FALSE
+    )
+)
+names(trawl_ALK) <- c("age","cmgrp","prop") 
+head(trawl_ALK)
+```
+
+```{r}
+trawl_ALK$col.prop <- hcl.colors(101,'viridis')[round(trawl_ALK$prop,2)*100+1]
+trawl_ALK$age <- as.numeric(as.character(trawl_ALK$age))
+trawl_ALK$cmgrp <- as.numeric(as.character(trawl_ALK$cmgrp))
+head(trawl_ALK)
+```
+
+```{r}
+with(
+    trawl_ALK,
+    symbols(
+        x=cmgrp,
+        y=age,
+        circles=prop/1.5,
+        inches=FALSE,
+        fg = col.prop,
+        bg = col2rgbA(col.prop,0.5),
+        xlab="Centimeter Group",
+        ylab="Age"
+    )
+)
+```
+
+```{r}
+trawl_NL <- data.frame(
+    table(
+        catch$cmgrp[catch$Gear=='trawl']
+    )
+)
+names(trawl_NL) <- c('cmgrp','count')   
+head(trawl_NL)
+```
+
+
+```{r}
+trawl_merge <- merge(trawl_ALK, trawl_NL)
+trawl_merge$N <- trawl_merge$prop * trawl_merge$count
+head(trawl_merge)
+```
+
+```{r}
+(trawl_CAA <- aggregate(N~age, data=trawl_merge, sum))
+trawl_CAA$age <- as.integer(as.character(trawl_CAA$age))
+with(trawl_CAA, plot(age, N, 
+     type='b',pch=16, col="black",
+          xlab="Age", ylab="Frequency",
+          main="Trawl estimated CAA"))
+```
+
+## Catch Curve
+
+```{r}
+firstage <- 2
+lastage <- 6
+
+mask <- trawl_CAA$age %in% seq(firstage, lastage)
+trawl_CAA$lnN <- log(trawl_CAA$N)
+with(trawl_CAA[mask,], plot(age, lnN, 
+     type='b',pch=16, col="black",
+          xlab="Age", ylab="Frequency",
+          main="Trawl estimated CAA"))
+```
+
+```{r}
+trawl_fit <- with(
+    trawl_CAA[mask,],
+    lm(lnN~age)
+)
+summary(trawl_fit)
+```
+
+```{r}
+(trawl_Z <- -trawl_fit$coefficients[2])
+(trawl_A <- 1 - exp(-trawl_Z))
+```
+
+```{r}
+coef_tab <- summary(trawl_fit)$coef
+Z <- coef_tab[2, 1]
+Zster <- coef_tab[2, 2]
+```
+

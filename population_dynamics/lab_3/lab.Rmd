@@ -15,7 +15,7 @@ head(trout_data)
 
 The objectives of this laboratory are:
 
-1. To determine the best growth model for each population and estimate L_∞, t_0, and k;
+1. To determine the best growth model for each population and estimate $L_{\infty}$, $t_0$, and $k$;
 2. Estimate the mean length at age for each population;
 3. Use an AIC model selection method to compare growth curves and parameters between populations.
 
@@ -130,7 +130,7 @@ with(
 
 The conclusion here is the same as in the last lab. The fit is reasonable but far from ideal. There is a clear pattern from under predicting to overpredicting as length increases so there's definitely a pattern to the residuals that (in theory) could be captured in a better model. 
 
-There's also quite a lot of variance left in these estimates, and that variance itself is patterned. 
+There's also quite a lot of variance left in these estimates, and that variance itself is patterned with our gear selectivity creating variance toward smaller predicted lengths.
 
 ## 2. For the Charlotte Harbor population, create a function that estimates the negative log likelihood of the normal distribution. Minimize the negative log likelihood of the normal distribution to estimate the parameters of the von Bertalanffy growth equation. 
 
@@ -262,7 +262,7 @@ rbind(ML_U95, ML_L95, NLS_U95, NLS_L95)
 
 ### Compare the estimated confidence intervals between methods. 
 
-$\sigma$ obviously offers no comparison as it is not in both methods. $t_0$ and $k$ are both very similar between the two methods. $L_{\infty}$ is the only one that stands out but it was fit as the log of itself during maximum likelihood estimation and so it's expected that the confidence interval for $L_{\infty}$ is asymmetric.
+$\sigma$ obviously offers no comparison as it is not in both methods. $t_0$ and $k$ are both very similar between the two methods. $L_{\infty}$ is the only one that stands out but it was fit as the log of itself during maximum likelihood estimation and so it's expected that the confidence interval for $L_{\infty}$ is asymmetric in the likelihood estimation.
 
 ## 4. Conduct the same analysis for the Indian River population (questions 1-3). Answer the same questions/bullet points. 
 
@@ -348,7 +348,7 @@ rbind(ML_U95, ML_L95, NLS_U95, NLS_L95)
 
 ### Compare the estimated confidence intervals between methods. 
 
-It's interesting that here all parameters are extremely close in terms of bounds - even $L_{\infty}$.
+It's interesting that here all parameters are extremely close in terms of bounds - even $L_{\infty}$. However the confidence interval for $L_{\infty}$ is still asymmetric for the maximum likelihood estimation. 
 
 ## 5. Using the likelihood-based model parameter estimates for each population, calculate the mean length at each age for age 0 to age 8 for each population. 
 
@@ -533,7 +533,7 @@ cols <- c(
 (sig_shared <- summarize_aic(fit, cols))
 ```
 
-## 8. Calculate the ∆AIC for all the models you trialed (report your AIC table to answer questions 6, 7, and 8). 
+## 8. Calculate the $\Delta$AIC for all the models you trialed (report your AIC table to answer questions 6, 7, and 8). 
 
 ```{r}
 aic_table <- data.frame(rbind(
@@ -545,7 +545,10 @@ aic_table <- data.frame(rbind(
     sig_shared
 ))
 colnames(aic_table) <- c('cols', 'dof', 'nll', 'aic')
-(aic_table <- aic_table[order(aic_table$aic),])
+
+aic_table$aic <- as.numeric(aic_table$aic)
+aic_table$delta <- aic_table$aic - min(aic_table$aic)
+(aic_table <- aic_table[order(aic_table$delta),])
 ```
 
 ### Which hypothesis had the most support based on AIC? 
@@ -554,11 +557,11 @@ Sharing $k$ had the best support.
 
 ### What are the top models based on the AIC? 
 
-Sharing $k$, sharing $t_0$, and all free were the best.
+Sharing $k$, sharing $t_0$, sharing $L_{\infty}$, and all free were the best.
 
 ### Do these top models make sense given the biology of Spotted Seatrout? 
 
-Sharing $t_0$ makes sense but the $t_0$ here is certainly unbiological. Growth rates would definitely change from place to place, but I think we're still able to fit reasonably well because $t_0$ and $L_{/infty}$ are still free in the shared $k$ case and we know these are all extremely correlated with one another. In general across these models the wild $t_0$ makes these rather unbiological.
+Sharing $t_0$ makes sense but the $t_0$ here is certainly unbiological. Growth rates would definitely change from place to place, but I think we're still able to fit reasonably well because $t_0$ and $L_{\infty}$ are still free in the shared $k$ case and we know these are all extremely correlated with one another. Same argument for $L_{\infty}$, I'd expect it to be different but the model is likely taking advantage of the other parameters to still fit. In general across these models the wild $t_0$ makes these rather unbiological.
 
 ## 9. Adjust the slot limits for the following scenarios and answer the following questions:
 
@@ -569,8 +572,9 @@ Sharing $t_0$ makes sense but the $t_0$ here is certainly unbiological. Growth r
 | 380 (0) | 480 (0) | Almost no sampling for age $>6$ or $<2$, extremely poor sampling across the board. | $<3$ | $>3$ | $L_{\infty}=446, k=0.939, t_0=-1.15, \sigma=26.4$ |
 | 380 (0) | 530 (0.03) | No sampling for age $<2$ biased toward middling or smaller fish throughout. | $<3$ | $>3$ | $L_{\infty}=532, k=0.222, t_0=-5.56, \sigma=40.2$ | 
 
-### Across scenarios, which had the biggest impact on L_∞? on k? on t_0? 
+### Across scenarios, which had the biggest impact on $L_{\infty}$? on $k$? on $t_0$? 
 
 - $L_{\infty}$ - Definitely case 3, the total lack of sampling of large fish threw things off entirely.
 - $k$ - Likewise case 3.
 - $t_0$ - case 4, the complete lack of samples on the low end with samples on the high end gave us a weird almost straight relationship between age and growth.
+
