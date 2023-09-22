@@ -388,6 +388,31 @@ colnames(morts) <- c("month", "day", "hour", "minute")
 morts
 ```
 
+## 10. Compare the estimates of S between the traditional catch curve, the Jackson, the Robson-Chapman, and the Millar (2015) catch curve analyses.
+
+- Traditional: 0.45 (0.36 - 0.51)
+- Robson-Chapman: 0.49 (0.47 - 0.51)
+- Jackson: 0.53
+- Millar: 0.40 (0.32 - 0.48)
+
+These are all definitely within the same ballpark with the millar predicting a little bit lower than in the others (its upper bound is still below Jackson and Robson-Chapman). 
+
+It's also interesting how tight the confidence interval is on the Robson-Chapman. 
+
+## 11. What is the effect of changing the first and last age on the traditional catch curve Z?
+
+### Explore changing just the first age.
+
+From age 3 onwards $S$ jumps up dramatically. 
+
+### Then changing just the last age.
+
+Dropping to ages 6 - 4 we find that the $S$ actually drops. 
+
+### Then changing both ages.
+
+In general you can more or less get whatever mortality you like between 0.25 and 0.85 by just picking the right range. So there is a lot of variance in here.
+
 ## 12. Perform a Millar (2015) catch-curve analysis for each gear.
 
 ### Trawl Data
