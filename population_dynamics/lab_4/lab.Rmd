@@ -320,4 +320,179 @@ $$M\approx \frac{4.22}{T_{\max}}$$
 
 This is interesting because if $Z=M+F$ then this would suggest that our trapnet estimate says $F\approx 0$ and from our trawl estimate $F\approx 0.3$. 
 
+## 8. Using equations 16.1 and 16.2 from Fisheries Techniques (1996), estimate and report in a table the mean total length at age and associated variance for the trawl and trap net gears. 
 
+### Trawl Group
+
+```{r}
+get_mean_total_length <- function(catch_info, alpha) {
+    catch_info$midpoint <- catch_info$cmgrp + 0.5
+
+    catch_info$fx <- catch_info$midpoint * catch_info$count
+    catch_info$fx2 <- catch_info$midpoint ^ 2 * catch_info$count
+
+    sumfx <- tapply(catch_info$fx, list(catch_info$age), sum)
+    sumf <- tapply(catch_info$count, list(catch_info$age), sum)
+    sumfx2 <- tapply(catch_info$fx2, list(catch_info$age), sum)
+
+    TL <- sumfx / sumf
+    var <- (sumf*sumfx2 - (sumfx ^ 2)) / (sumf * (sumf - 1))
+    std <- sqrt(var)
+    U <- TL + qnorm((1-alpha/2)) * std
+    L <- TL - qnorm((1-alpha/2)) * std
+    return(
+        cbind(
+            U, TL, L, std, var
+        )
+    )
+}
+
+get_mean_total_length(catch_info_trawl, 0.05)
+```
+
+### Trapnet Group
+
+```{r}
+get_mean_total_length(catch_info_trapnet, 0.05)
+```
+
+### At about what age would fish recruit to a size preferred by anglers (230 mm)? 
+
+At about age three. 
+
+### Why would the survival estimates vary between sampling gears?
+
+Trapnets, for the fish they are catching, seem to be catching them at larger sizes. This definitely makes me think it's having a hard time catching all those age 0's which is deflating the age 0 numbers and making the survival rates look better.
+
+## 9. Using the trawl estimate of Z, calculate and report the instantaneous and finite mortality rates at a minute, hour, day, and a month
+
+```{r}
+(Z = estimate_parameters(fit_trawl, 0.05)[2, "Z"])
+
+day_Z <- Z/365
+hour_Z <- day_Z/24
+minute_Z <- hour_Z/60
+month_Z <- Z/52
+
+day_A <- 1 - exp(day_Z)
+hour_A <- 1 - exp(hour_Z)
+minute_A <- 1 - exp(minute_Z)
+month_A <- 1 - exp(month_Z)
+
+morts <- rbind(
+    c(month_Z, day_Z, hour_Z, minute_Z),
+    c(month_A, day_A, hour_A, minute_A)
+)
+rownames(morts) <- c("Z", "A")
+colnames(morts) <- c("month", "day", "hour", "minute")
+morts
+```
+
+## 12. Perform a Millar (2015) catch-curve analysis for each gear.
+
+### Trawl Data
+
+```{r}
+reshape_for_millar <- function(CAA) {
+    age_at_peak <- CAA$age[which.max(CAA$count)]
+    CAA_lim <- CAA[CAA$age >= age_at_peak,]
+
+    max_age <- max(CAA_lim$age)
+    CAA_ext <- rbind(
+        CAA_lim,
+        cbind(
+            age=(max_age+1):(2*max_age),
+            count=rep(0,max_age)
+        )
+    )
+    CAA_ext$count <- floor(CAA_ext$count)
+    return(CAA_ext)
+}
+
+get_millar_fit <- function(CAA) {
+    CAA_ext <- reshape_for_millar(CAA)
+
+    fit <- glmer(
+        count ~ age + (1|age),
+        family=poisson,
+        data=CAA_ext
+    )
+    print(summary(fit))
+    return(fit)
+}
+
+millar_fit_trawl <- get_millar_fit(CAA_trawl)
+```
+
+#### Report Z, A, and S (MLE, lower 95% and upper 95%) in a table.
+```{r}
+get_params_from_millar <- function(millar_fit, alpha) {
+    coef <- summary(millar_fit)$coef
+    Z <- coef[2, 1]
+    std <- coef[2, 2]
+    ZU <- min(Z + qnorm(1-alpha/2)*std, 0)
+    ZL <- Z - qnorm(1-alpha/2)*std
+
+    A <- 1 - exp(Z)
+    AU <- 1 - exp(ZU)
+    AL <- 1 - exp(ZL)
+
+    S <- exp(Z)
+    SU <- exp(ZU)
+    SL <- exp(ZL)
+
+    m <- matrix(c(ZL, Z, ZU, AL, A, AU, SL, S, SU),3,3)
+        colnames(m) <- c("Z", "A", "S")
+        rownames(m) <- c("Lower", "MLE", "Upper")
+    return(m)
+}
+
+get_params_from_millar(millar_fit_trawl, 0.05)
+```
+
+#### Plot the age random effects.
+
+```{r}
+plot_millar_random_effects <- function(CAA, millar_fit, main) {
+    CAA_ext <- reshape_for_millar(CAA)
+    re <- ranef(millar_fit)$age[,1]
+    par(mar=c(4.3,4,1,1))
+    plot(CAA_ext$age, 
+        re, 
+        pch=16, cex=1.3, type='b',
+        ylab='Random Effect', xlab='Age',
+        cex.axis=1.2, cex.lab=1.2, las=1,
+        main=main)
+    abline(h=0, lty=3)
+}
+
+plot_millar_random_effects(CAA_trawl, millar_fit_trawl, "Trawl")
+```
+
+### Trapnet Data
+
+```{r}
+millar_fit_trapnet <- get_millar_fit(CAA_trapnet)
+```
+
+
+
+#### Report Z, A, and S (MLE, lower 95% and upper 95%) in a table.
+```{r}
+get_params_from_millar(millar_fit_trapnet, 0.05)
+```
+
+#### Plot the age random effects.
+
+```{r}
+plot_millar_random_effects(CAA_trapnet, millar_fit_trapnet, "Trapnet")
+```
+
+## 13. What are the assumptions of catch curve analyses?
+
+- That recruitment is more or less constant (this is relaxed with Millar)
+- That average instantaneous mortality is more or less constant
+
+## 14. If a species has a really high M, what might that suggest about the F they could sustain?
+
+If a species is able to survive with a really high $M$ that means they can produce loads of biomass to support the turnover. Therefore it is likely that they can be fished at relatively high levels and maintain their population as fishing mortality will be a small consideration in comparison to the natural mortality that they are usually dealing with anyways.
