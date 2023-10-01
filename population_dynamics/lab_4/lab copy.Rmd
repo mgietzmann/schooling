@@ -1,0 +1,549 @@
+---
+title: FAS6337C - Lab 4
+author: Marcel Gietzmann-Sanders
+---
+
+# Estimation of Total Mortality, Age-Length Key, and Unbiased TL-at-Age
+
+```{r}
+library(lme4)
+
+col2rgbA<-function(color,transparency)
+{
+  rgb(t(col2rgb(color))/255,alpha=transparency)
+}
+```
+
+Data for this laboratory are from a Lake Griffin, Florida black crappie *Pomoxis nigromaculatus* population. The fish were sampled with two sampling gears (trap nets and a trawl) fished simultaneously during Fall 1997. Fishery managers wish to determine which gear is more appropriate for assessing black crappie total mortality and growth rates.
+
+All fish collected in each gear were measured to the nearest mm total length (TL). A subsample of five fish per centimeter group (e.g., 10-11 cm, 11-12 cm, etc.) from each gear were had their saggital otoliths removed and their age determined by examining otoliths in whole view.
+
+
+```{r}
+setwd("/workspaces/schooling/population_dynamics/lab_4/")
+age <- read.table("data/griffin age data.txt", header=TRUE, quote="\"", na.strings=".")
+trawl <- read.table("data/griffin trawl data.txt", header=TRUE, quote="\"", na.strings=".")
+trap <- read.table("data/trap net data.txt", header=TRUE, quote="\"", na.strings=".")
+```
+
+The objectives of this laboratory are:
+
+1. Use an age-length key to estimate the age structure of the population from the subsample of aged fish.
+2. Estimate instantaneous total mortality (Z) and total annual mortality (A) for fish collected with each sampling gear.
+3. Estimate mean TL-at-age using an age-length key for both gears.
+
+## 1. Place fish in centimeter groups for the catch dataset and the aged subset.
+
+```{r}
+catch <- rbind(
+    data.frame(
+        Gear=trap$Gear,
+        TL = trap$TL
+    ),
+    data.frame(
+        Gear=rep("trawl", nrow(trawl)),
+        TL = trawl$TL
+    )
+)
+table(catch$Gear)
+
+# count the number of fish in each centimeter group
+# and summarize by the gear type
+with(
+    catch, {
+        table(Gear, floor(TL / 10))
+    }
+)
+
+# plot the number of fish in each centimeter group
+# and split by gear type
+with(
+    catch, {
+        hist(
+            TL[Gear == 'trapnet'],
+            main="Length Groups from Trapnets",
+            xlab="Total Length"
+        )
+        hist(
+            TL[Gear == 'trawl'],
+            main="Length Groups from Trawl",
+            xlab="Total Length"
+        )
+    }
+)
+
+```
+
+```{r}
+age$cmgrp <- floor(age$TL / 10)
+catch$cmgrp <- floor(catch$TL / 10)
+```
+
+### With the aged subset, tabulate the number of fish that are in each centimeter group for each age. 
+
+```{r}
+table(age$cmgrp)
+```
+
+### With the catch dataset, plot a histogram of the number of fish that are in each centimeter group by gear (see Lab 1 – Size Structure code).
+
+```{r}
+with(
+    catch, {
+        hist(
+            cmgrp[Gear == 'trapnet'],
+            main="Length Groups from Trapnets",
+            xlab="Centimeter Group"
+        )
+        hist(
+            cmgrp[Gear == 'trawl'],
+            main="Length Groups from Trawl",
+            xlab="Centimeter Group"
+        )
+    }
+)
+```
+
+## 2. Subset the aged subset to those caught on the trawl. 
+
+```{r}
+age_trawl <- age[age$Gear == "trawl",]
+```
+
+### Calculate and plot the proportion of fish in each cm group for each age (otherwise known as an Age-Length Key)(bubble plot).
+
+```{r}
+get_ALK <- function(age) {
+    ALK <- data.frame(
+        prop.table(
+            table(age$Rings, age$cmgrp),
+            margin=2
+        )
+    )
+    names(ALK) <- c("age","cmgrp","prop") 
+    ALK$age <- as.numeric(as.character(ALK$age))
+    ALK$cmgrp <- as.numeric(as.character(ALK$cmgrp))
+    ALK$prop <- as.numeric(as.character(ALK$prop))
+    ALK$col.prop <- hcl.colors(101,'viridis')[round(ALK$prop,2)*100+1]
+    return(ALK)
+}
+
+plot_ALK <- function(ALK, main) {
+    # I want the circles to have area equal to
+    # my proportion (for easier interpretation)
+    # this would mean prop <- 4 * pi * r^2 or 
+    # r <- sqrt(prop / (4 * pi))
+    with(
+        ALK, {
+            symbols(
+                x=cmgrp,
+                y=age,
+                circles=sqrt(prop/(4 * pi)) * 2,
+                inches=F,
+                fg = col.prop,
+                bg = col2rgbA(col.prop,0.5),
+                xlab="Centimeter Group",
+                ylab="Age",
+                main=main
+            )
+        }
+    )
+}
+```
+
+```{r}
+ALK_trawl <- get_ALK(age_trawl)
+plot_ALK(ALK_trawl, "Trawl ALK")
+```
+
+## 3. Subset the catch dataset to those caught on a trawl. Merge the aged subset and the catch dataset for fish caught on the trawl. 
+
+```{r}
+get_catch_count_info <- function(catch, ALK) {
+    catch_summary <- data.frame(table(catch$cmgrp))
+    names(catch_summary) <- c("cmgrp", "total")
+    catch_summary$cmgrp <- as.numeric(as.character(catch_summary$cmgrp))
+    catch_summary$total <- as.numeric(as.character(catch_summary$total))
+    info <- merge(ALK, catch_summary)
+    info$count <- info$total * info$prop
+    return(info)
+}
+
+catch_trawl <- catch[catch$Gear == "trawl",]
+catch_info_trawl <- get_catch_count_info(catch_trawl, ALK_trawl)
+```
+
+### Calculate and plot the expected number of fish of each age in each cm group (bubble plot). 
+
+```{r}
+plot_LAA <- function(merged, main) {
+    with(
+        merged, {
+            symbols(
+                x=cmgrp,
+                y=age,
+                circles=sqrt(count/(sum(merged$count))/(4 * pi)) * 10,
+                inches=F,
+                xlab="Centimeter Group",
+                ylab="Age",
+                main=main
+            )
+        }
+    )
+}
+
+plot_LAA(catch_info_trawl, "Expected Count from Trawl")
+```
+
+## 4. Conduct a traditional catch-curve analysis using the merged age structure data for trawl caught fish. Use only fish that have fully recruited to the gear. Do not include older age classes with < 5 fish.
+
+```{r}
+get_CAA <- function(catch_info, main) {
+    CAA <- aggregate(count~age, data=catch_info, sum)
+    with(
+        CAA, {
+            plot(
+                age,
+                count,
+                type='b',
+                pch=16,
+                col="black",
+                xlab="Age",
+                ylab="Count",
+                main=main
+            )
+        }
+    )
+    return(CAA)
+}
+
+(CAA_trawl <- get_CAA(catch_info_trawl, "CAA for Trawl"))
+```
+### What is the first age that is fully recruited to the gear?
+
+Age 2 seems to be the first age fully recruited to the gear as it's only downhill from there.
+
+### What is the last age to include?
+
+Age 6 is the last age with >5 fish. So this will be the last age we include.
+
+### Estimate Z, A, and S and their confidence intervals, report in a table. 
+
+```{r}
+fit_caa <- function(CAA, first_age, last_age) {
+    mask <- CAA$age %in% seq(first_age, last_age)
+    CAA$lncount <- log(CAA$count)
+    fit <- with(
+        CAA[mask,],
+        lm(lncount~age)
+    )
+    print(summary(fit))
+    return(fit)
+}
+
+fit_trawl <- fit_caa(CAA_trawl, 2, 6)
+```
+
+```{r}
+estimate_parameters <- function(fit, alpha) {
+    coef_tab <- summary(fit)$coef
+    Z <- coef_tab[2, 1]
+    Z_sterr <- coef_tab[2, 2]
+
+    ZL <- Z - qnorm(1 - (alpha/2)) * Z_sterr
+    ZU <- min(Z + qnorm(1 - (alpha/2)) * Z_sterr, 0)
+
+    A <- 1 - exp(Z)
+    AL <- 1 - exp(ZL)
+    AU <- 1 - exp(ZU)
+
+    S <- exp(Z)
+    SL <- exp(ZL)
+    SU <- exp(ZU)
+
+    m <- matrix(c(ZL, Z, ZU, AL, A, AU, SL, S, SU),3,3)
+    colnames(m) <- c("Z", "A", "S")
+    rownames(m) <- c("Lower", "MLE", "Upper")
+    return(m)
+}
+
+estimate_parameters(fit_trawl, 0.05)
+```
+
+## 5. Repeat numbers 2-4 for the trap net data including all questions, plots, and tables. 
+
+```{r}
+age_trapnet <- age[age$Gear == "trapnet",]
+```
+
+### Calculate and plot the proportion of fish in each cm group for each age (otherwise known as an Age-Length Key)(bubble plot).
+
+```{r}
+ALK_trapnet <- get_ALK(age_trapnet)
+plot_ALK(ALK_trapnet, "Trapnet ALK")
+```
+
+
+```{r}
+catch_trapnet <- catch[catch$Gear == "trapnet",]
+catch_info_trapnet <- get_catch_count_info(catch_trapnet, ALK_trapnet)
+```
+
+### Calculate and plot the expected number of fish of each age in each cm group (bubble plot). 
+
+```{r}
+plot_LAA(catch_info_trapnet, "Expected Count from Trapnet")
+```
+
+
+```{r}
+(CAA_trapnet <- get_CAA(catch_info_trapnet, "CAA for Trapnet"))
+```
+### What is the first age that is fully recruited to the gear?
+
+Seems here we can start at age 0.
+
+### What is the last age to include?
+
+Age 2 is the last age with >5 fish. So this will be the last age we include.
+
+### Estimate Z, A, and S and their confidence intervals, report in a table. 
+
+```{r}
+fit_trapnet <- fit_caa(CAA_trapnet, 0, 2)
+```
+
+```{r}
+estimate_parameters(fit_trapnet, 0.05)
+```
+
+### How does the estimated age structure for the population differ between gears?
+
+- Recruitment for trapnets is happening at age 0 whereas for the trawl it's happening at age 2
+- Trawls capture fish older than 3 whereas the trapnet catches nothing above age 3. 
+
+## 6. How do the estimated Z, A, and S differ between the gears?
+- First of all the confidence bounds for the trapnet gear are absurd. And it makes sense they would be given how many points we are fitting in our regression.
+- Our MLE estimate for the trapnets suggests lower mortality than with the trawlnet however the estimate is well within the trawl net confidence interval. 
+- It seems overall they are giving similar answers - at least within the bounds of accuracy presented by so few fit points.
+
+### Why would you think this would occur?
+
+I honestly think this is just within the variance of either estimate but if I were to venture a guess as to why the trapnet estimate is slight lower (in terms of mortality) I suspect even the trapnet has trouble catching age 0 fish given how small they are. And as a result there's an underestimate in the number of age 0 fish, thus dropping the overall estimate of mortality. 
+
+### From your catch curve, would one gear be preferable over another for estimating total mortality for the population? Why?
+
+Trawls catch a greater diversity of age groups giving us more points to fit. I'd say that goes a long way when trapnets are giving us so few age classes. 
+
+## 7 Compare estimates obtained from the catch curve analysis to those estimated using Hoenig's equation, where $T_{\max}$ is the maximum observed age.
+
+$$M\approx \frac{4.22}{T_{\max}}$$
+
+```{r}
+(max_age <- max(na.omit(age)$Rings))
+4.22 / max_age
+```
+
+This is interesting because if $Z=M+F$ then this would suggest that our trapnet estimate says $F\approx 0$ and from our trawl estimate $F\approx 0.3$. 
+
+## 8. Using equations 16.1 and 16.2 from Fisheries Techniques (1996), estimate and report in a table the mean total length at age and associated variance for the trawl and trap net gears. 
+
+### Trawl Group
+
+```{r}
+get_mean_total_length <- function(catch_info, alpha) {
+    catch_info$midpoint <- catch_info$cmgrp + 0.5
+
+    catch_info$fx <- catch_info$midpoint * catch_info$count
+    catch_info$fx2 <- catch_info$midpoint ^ 2 * catch_info$count
+
+    sumfx <- tapply(catch_info$fx, list(catch_info$age), sum)
+    sumf <- tapply(catch_info$count, list(catch_info$age), sum)
+    sumfx2 <- tapply(catch_info$fx2, list(catch_info$age), sum)
+
+    TL <- sumfx / sumf
+    var <- (sumf*sumfx2 - (sumfx ^ 2)) / (sumf * (sumf - 1))
+    std <- sqrt(var)
+    U <- TL + qnorm((1-alpha/2)) * std
+    L <- TL - qnorm((1-alpha/2)) * std
+    return(
+        cbind(
+            U, TL, L, std, var
+        )
+    )
+}
+
+get_mean_total_length(catch_info_trawl, 0.05)
+```
+
+### Trapnet Group
+
+```{r}
+get_mean_total_length(catch_info_trapnet, 0.05)
+```
+
+### At about what age would fish recruit to a size preferred by anglers (230 mm)? 
+
+At about age three. 
+
+### Why would the survival estimates vary between sampling gears?
+
+Trapnets, for the fish they are catching, seem to be catching them at larger sizes. This definitely makes me think it's having a hard time catching all those age 0's which is deflating the age 0 numbers and making the survival rates look better.
+
+## 9. Using the trawl estimate of Z, calculate and report the instantaneous and finite mortality rates at a minute, hour, day, and a month
+
+```{r}
+(Z = estimate_parameters(fit_trawl, 0.05)[2, "Z"])
+
+day_Z <- Z/365
+hour_Z <- day_Z/24
+minute_Z <- hour_Z/60
+month_Z <- Z/52
+
+day_A <- 1 - exp(day_Z)
+hour_A <- 1 - exp(hour_Z)
+minute_A <- 1 - exp(minute_Z)
+month_A <- 1 - exp(month_Z)
+
+morts <- rbind(
+    c(month_Z, day_Z, hour_Z, minute_Z),
+    c(month_A, day_A, hour_A, minute_A)
+)
+rownames(morts) <- c("Z", "A")
+colnames(morts) <- c("month", "day", "hour", "minute")
+morts
+```
+
+## 10. Compare the estimates of S between the traditional catch curve, the Jackson, the Robson-Chapman, and the Millar (2015) catch curve analyses.
+
+- Traditional: 0.45 (0.36 - 0.51)
+- Robson-Chapman: 0.49 (0.47 - 0.51)
+- Jackson: 0.53
+- Millar: 0.40 (0.32 - 0.48)
+
+These are all definitely within the same ballpark with the millar predicting a little bit lower than in the others (its upper bound is still below Jackson and Robson-Chapman). 
+
+It's also interesting how tight the confidence interval is on the Robson-Chapman. 
+
+## 11. What is the effect of changing the first and last age on the traditional catch curve Z?
+
+### Explore changing just the first age.
+
+From age 3 onwards $S$ jumps up dramatically. 
+
+### Then changing just the last age.
+
+Dropping to ages 6 - 4 we find that the $S$ actually drops. 
+
+### Then changing both ages.
+
+In general you can more or less get whatever mortality you like between 0.25 and 0.85 by just picking the right range. So there is a lot of variance in here.
+
+## 12. Perform a Millar (2015) catch-curve analysis for each gear.
+
+### Trawl Data
+
+```{r}
+reshape_for_millar <- function(CAA) {
+    age_at_peak <- CAA$age[which.max(CAA$count)]
+    CAA_lim <- CAA[CAA$age >= age_at_peak,]
+
+    max_age <- max(CAA_lim$age)
+    CAA_ext <- rbind(
+        CAA_lim,
+        cbind(
+            age=(max_age+1):(2*max_age),
+            count=rep(0,max_age)
+        )
+    )
+    CAA_ext$count <- floor(CAA_ext$count)
+    return(CAA_ext)
+}
+
+get_millar_fit <- function(CAA) {
+    CAA_ext <- reshape_for_millar(CAA)
+
+    fit <- glmer(
+        count ~ age + (1|age),
+        family=poisson,
+        data=CAA_ext
+    )
+    print(summary(fit))
+    return(fit)
+}
+
+millar_fit_trawl <- get_millar_fit(CAA_trawl)
+```
+
+#### Report Z, A, and S (MLE, lower 95% and upper 95%) in a table.
+```{r}
+get_params_from_millar <- function(millar_fit, alpha) {
+    coef <- summary(millar_fit)$coef
+    Z <- coef[2, 1]
+    std <- coef[2, 2]
+    ZU <- min(Z + qnorm(1-alpha/2)*std, 0)
+    ZL <- Z - qnorm(1-alpha/2)*std
+
+    A <- 1 - exp(Z)
+    AU <- 1 - exp(ZU)
+    AL <- 1 - exp(ZL)
+
+    S <- exp(Z)
+    SU <- exp(ZU)
+    SL <- exp(ZL)
+
+    m <- matrix(c(ZL, Z, ZU, AL, A, AU, SL, S, SU),3,3)
+        colnames(m) <- c("Z", "A", "S")
+        rownames(m) <- c("Lower", "MLE", "Upper")
+    return(m)
+}
+
+get_params_from_millar(millar_fit_trawl, 0.05)
+```
+
+#### Plot the age random effects.
+
+```{r}
+plot_millar_random_effects <- function(CAA, millar_fit, main) {
+    CAA_ext <- reshape_for_millar(CAA)
+    re <- ranef(millar_fit)$age[,1]
+    par(mar=c(4.3,4,1,1))
+    plot(CAA_ext$age, 
+        re, 
+        pch=16, cex=1.3, type='b',
+        ylab='Random Effect', xlab='Age',
+        cex.axis=1.2, cex.lab=1.2, las=1,
+        main=main)
+    abline(h=0, lty=3)
+}
+
+plot_millar_random_effects(CAA_trawl, millar_fit_trawl, "Trawl")
+```
+
+### Trapnet Data
+
+```{r}
+millar_fit_trapnet <- get_millar_fit(CAA_trapnet)
+```
+
+
+
+#### Report Z, A, and S (MLE, lower 95% and upper 95%) in a table.
+```{r}
+get_params_from_millar(millar_fit_trapnet, 0.05)
+```
+
+#### Plot the age random effects.
+
+```{r}
+plot_millar_random_effects(CAA_trapnet, millar_fit_trapnet, "Trapnet")
+```
+
+## 13. What are the assumptions of catch curve analyses?
+
+- That recruitment is more or less constant (this is relaxed with Millar)
+- That average instantaneous mortality is more or less constant
+
+## 14. If a species has a really high M, what might that suggest about the F they could sustain?
+
+If a species is able to survive with a really high $M$ that means they can produce loads of biomass to support the turnover. Therefore it is likely that they can be fished at relatively high levels and maintain their population as fishing mortality will be a small consideration in comparison to the natural mortality that they are usually dealing with anyways.****
