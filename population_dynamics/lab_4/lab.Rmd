@@ -318,7 +318,7 @@ $$M\approx \frac{4.22}{T_{\max}}$$
 4.22 / max_age
 ```
 
-This is interesting because if $Z=M+F$ then this would suggest that our trapnet estimate says $F\approx 0$ and from our trawl estimate $F\approx 0.3$. 
+This is interesting because if $Z=M+F$ then this would suggest that our trapnet estimate says $F\approx 0$ and from our trawl estimate $F\approx 0.3$. Clearly something is wrong with our trapnet estimate if we believe the Hoenig equation's result to be reasonably accurate.
 
 ## 8. Using equations 16.1 and 16.2 from Fisheries Techniques (1996), estimate and report in a table the mean total length at age and associated variance for the trawl and trap net gears. 
 
@@ -517,6 +517,7 @@ plot_millar_random_effects(CAA_trapnet, millar_fit_trapnet, "Trapnet")
 
 - That recruitment is more or less constant (this is relaxed with Millar)
 - That average instantaneous mortality is more or less constant
+- We have a random sample of the population
 
 ## 14. If a species has a really high M, what might that suggest about the F they could sustain?
 
