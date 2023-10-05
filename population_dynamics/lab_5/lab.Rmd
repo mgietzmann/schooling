@@ -1,0 +1,6 @@
+---
+title: FAS6337C - Lab 5
+author: Marcel Gietzmann-Sanders
+---
+
+# Testing for Differences in Length at Maturity

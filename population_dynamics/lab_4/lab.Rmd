@@ -481,7 +481,6 @@ get_params_from_millar(millar_fit_trawl, 0.05)
 plot_millar_random_effects <- function(CAA, millar_fit, main) {
     CAA_ext <- reshape_for_millar(CAA)
     re <- ranef(millar_fit)$age[,1]
-    par(mar=c(4.3,4,1,1))
     plot(CAA_ext$age, 
         re, 
         pch=16, cex=1.3, type='b',
@@ -493,6 +492,8 @@ plot_millar_random_effects <- function(CAA, millar_fit, main) {
 
 plot_millar_random_effects(CAA_trawl, millar_fit_trawl, "Trawl")
 ```
+
+Note sure why it's cutting off the last point (something wrong with the PDF), but 14 is at 0.0.
 
 ### Trapnet Data
 
@@ -512,6 +513,8 @@ get_params_from_millar(millar_fit_trapnet, 0.05)
 ```{r}
 plot_millar_random_effects(CAA_trapnet, millar_fit_trapnet, "Trapnet")
 ```
+
+Note sure why it's cutting off the last point, but 6 is at 0.0.
 
 ## 13. What are the assumptions of catch curve analyses?
 
