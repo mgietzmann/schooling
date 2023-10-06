@@ -260,11 +260,23 @@ lines(males$mtl[order(males$mtl)], males$pred[order(males$mtl)], col="red")
 
 ### Adjust the female and male maturity length slider such that they are 10 mm apart, hold the sharpness at 0.05 for both, then determine the approximate sample size that results in $\hat \theta$ within 5 mm of the true (what you set in the slider).
 
+- Female Maturity at Length - 255.0
+- Male Maturity at Length - 265.0
+
+This required that I put the sample size at 40 for each. 
+
 ### Increase steepness for either females or males, how does increasing steepness affect the sample size needed?
+
+By dropping the sharpness to 0.03 I could drop to 30. I'm noticing a lot of variance though in the estimates each time I restart the simulation. 
 
 ### Increase the difference between female and male maturity length to 25 mm with steepness at 0.03, what is the sample size needed to have the 95% confidence intervals not overlap between sexes?
 
+- Female Maturity at Length - 240.0
+- Male Maturity at Length - 265.0
 
+Seems like the point at with the 95% confidence intervals no longer intersect is at 70 samples for each sex. 
+
+## 8. Construct a generalized linear model (GLM) to fit the maturity data (for males and females), using the GLM call demonstrated in lab R code using equation 2.
 
 ```{r}
 logit <- function(x){
@@ -276,62 +288,77 @@ inv_logit <- function(x){
 ```
 
 ```{r}
-colnames(data) <- tolower(colnames(data))
-female <- data[data$sex=="female",]
-male <- data[data$sex=="male",]
+glm_females <- glm(mat~mtl, data=females, family = binomial("logit"))
+summary(glm_females)
 ```
 
 ```{r}
-plot(females$mtl, females$mat)
+c(
+    (logit(0.5) - glm_females$coefficients[1]) / glm_females$coefficients[2], 
+    logit(0.5) - glm_females$coefficients[1]
+)
 ```
 
 ```{r}
-f_lmat50 <- 200
-f_sig <- 20
-
-theta <- c(f_lmat50, f_sig)
 ```
 
 ```{r}
-fun <- function(theta) {
-    f_lmat50 <- theta[1]
-    f_sig <- theta[2]
+glm_males <- glm(mat~mtl, data=males, family = binomial("logit"))
 
-    prob_mat <- 1 / (1 + exp(-(females$mtl - f_lmat50) / f_sig))
-    nll <- -1*sum(dbinom(females$mat, size=1, prob=prob_mat, log=T))
-    return(nll)
-}
-fun(theta)
+summary(glm_males)
 ```
 
 ```{r}
-fit <- optim(theta, fun, hessian=T)
-fit$par
+c(
+    (logit(0.5) - glm_males$coefficients[1]) / glm_males$coefficients[2], 
+    logit(0.5) - glm_males$coefficients[1]
+)
+```
+
+
+### How is the parameter estimates of $L_{mat}$ using Equation 3 different from the parameter estimates constructed 'by hand' for question 4? 
+They are the same up to the third decimal place.
+
+### For each sex, plot the predictions from each analysis with the observed data
+
+```{r}
+females$glm_pred <- predict(glm_females, type="response")
+plot(
+    females$mtl, 
+    females$mat,
+    main="Female White Grunt Maturity",
+    xlab="Maximum Total Length (mm)",
+    ylab="Maturity (0=immature, 1=mature)"
+)
+lines(females$mtl[order(females$mtl)], females$glm_pred[order(females$mtl)], col="red")
 ```
 
 ```{r}
-sterr <- sqrt(diag(solve(fit$hessian)))
-sterr
+males$glm_pred <- predict(glm_males, type="response")
+plot(
+    males$mtl,
+    males$mat,
+    main="Male White Grunt Maturity",
+    xlab="Maximum Total Length (mm)",
+    ylab="Maturity (0=immature, 1=mature)"
+)
+lines(males$mtl[order(males$mtl)], males$glm_pred[order(males$mtl)], col="red")
 ```
 
-```{r}
-predictions <- 1/(1+exp(-(females$mtl-fit$par[1])/fit$par[2]))
-plot(females$mtl, females$mat)
-lines(females$mtl[order(females$mtl)], predictions[order(females$mtl)], col="red")
-```
+## 9. Answer the following:
 
-```{r}
-mod_f <- glm(mat~mtl, data=females, family = binomial("logit"))
-(mod_f)
-summary(mod_f)
-```
+### What are the analytical benefits of each approach? 
 
-```{r}
-predicted <- predict(mod_f, type="response")
-```
+The GLM is nice in the sense that anything that can be treated as a probability can be modeled directly using very simple formulations.
+One can simply add additional terms to the model to account for additional factors. With the other approach you have to specify the formula yourself
+and that formula is going to get more and more unwieldy as you add more factors. However using optim means you get to control the formulation exactly
+so if you were wanting to do something more custom it enables you to do that. 
 
-```{r}
-l50_f <- (logit(0.5) - mod_f$coefficients[1])/mod_f$coefficients[2]
-l50_f
-```
+The GLM is nice if you want to understand things in terms of odds ratios as it's going to give you everything more or less directly as that. 
+However if you're really just interested in things like $L_{mat50}$ then you can more easily extract that information from the optim approach.
 
+### What specifically does the GLM tell you that the ‘by hand’ approach does not, what specifically does it not give that the ‘by hand’ approach does? (if unfamiliar look here: https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-how-do-i-interpret-odds-ratios-in-logistic-regression/)  The key, here, is to understand what information is given by very related, but different types of analyses when applied to the same data.
+
+As mentioned above, GLMs for this problem think in terms of log odds rather than in terms of our $\sigma$ and $L_{mat50}$ parameters. What's really cool
+about this is the fact that we can compute other percentiles if we like or understand how changes in our factors change the odds of maturity (or whatever
+binary variable we're working with). However it also means that we have to do a bit more work to get the information we want if odds is not what we are after.
