@@ -70,7 +70,7 @@ Yes males have a smaller $L_{mat}$ than the females. And the steepness of their 
 ## 4. Repeat questions 2 & 3 in R. Answer the same questions in Q3
 
 ```{r}
-fun <- function(theta) {
+get_nll <- function(theta) {
     f_lmat50 <- theta[1]
     f_sig <- theta[2]
     m_lmat50 <- theta[3]
@@ -87,7 +87,7 @@ fun <- function(theta) {
 ```{r}
 theta <- c(200, 20, 200, 20)
 for (i in 1:10) {
-    fit <- optim(theta, fun, hessian=T)
+    fit <- optim(theta, get_nll, hessian=T)
     theta <- fit$par
 }
 theta
@@ -121,6 +121,148 @@ colnames(results) <- c("Upper", "Lower")
 rownames(results) <- c("f_lmat50", "f_sig", "m_lmat50", "m_sig")
 results
 ```
+
+## 5. Use an AIC model comparison procedure to test whether the parameters are shared between males and females (revisit Lab 2, Part 1 for help). 
+
+```{r}
+subset_theta <- function(theta, params_to_fit) {
+    input <- c()
+    for (i in 1:length(params_to_fit)) {
+        input <- append(input, theta[params_to_fit[i]])
+    }
+    return(input)
+}
+
+update_theta <- function(theta, input, params_to_fit, index_to_share) {
+    v = theta
+    for (i in 1:length(params_to_fit)) {
+        v[params_to_fit[i]] <- input[i]
+    }
+    for (i in 1:length(v)) {
+        if (!(i %in% params_to_fit)) {
+            v[i] <- v[index_to_share[i]]
+        }
+    }
+    return(v)
+}
+
+do_fit <- function(theta, params_to_fit, index_to_share) {
+
+    fun <- function(input) {
+        v = update_theta(theta, input, params_to_fit, index_to_share)
+        return(get_nll(v))
+    }
+
+    input <- subset_theta(theta, params_to_fit)
+    for (i in 1:10) {
+        fit <- optim(input, fun, hessian=T)
+        input <- fit$par
+    }
+    theta <- update_theta(theta, input, params_to_fit, index_to_share)
+    return(theta)
+}
+
+get_aic <- function(theta, params_to_fit) {
+    nll <- get_nll(theta)
+    k <- length(params_to_fit)
+    aic <- 2*k + 2*nll
+    return(c(nll, k, aic))
+}
+```
+
+### Report your results in a table (Include the model formula, the AIC value, the $\Delta$AIC value, and the parameter estimates for each sex). 
+
+```{r}
+
+starting_guess <- c(200, 20, 200, 20)
+index_to_share <- c(3, 4, 1, 2)
+row_names <- c()
+col_names <- c("f_lmat50", "f_sig", "m_lmat50", "m_sig", "nll", "params", "AIC")
+
+params_to_fit <- c(1, 2, 3)
+theta <- do_fit(starting_guess, params_to_fit, index_to_share)
+aic_info <- get_aic(theta, params_to_fit)
+row1 <- c(theta, aic_info)
+row_names <- append(row_names, "L(h)sig(.)")
+
+params_to_fit <- c(1, 2, 4)
+theta <- do_fit(starting_guess, params_to_fit, index_to_share)
+aic_info <- get_aic(theta, params_to_fit)
+row2 <- c(theta, aic_info)
+row_names <- append(row_names, "L(.)sig(h)")
+
+params_to_fit <- c(1, 2)
+theta <- do_fit(starting_guess, params_to_fit, index_to_share)
+aic_info <- get_aic(theta, params_to_fit)
+row3 <- c(theta, aic_info)
+row_names <- append(row_names, "L(.)sig(.)")
+
+params_to_fit <- c(1, 2, 3, 4)
+theta <- do_fit(starting_guess, params_to_fit, index_to_share)
+aic_info <- get_aic(theta, params_to_fit)
+row4 <- c(theta, aic_info)
+row_names <- append(row_names, "L(h)sig(h)")
+
+
+results <- rbind(row1, row2, row3, row4)
+colnames(results) <- col_names
+rownames(results) <- row_names
+results <- data.frame(results)
+
+results <- results[order(results$AIC),]
+results$delta_aic <- results$AIC - results$AIC[1]
+results
+```
+
+### Does it appear that $L_{mat}$ or $\sigma$ differ between sexes? 
+- Both of the best models have $L_{mat}$ as different between the two sexes. 
+- The model with $\sigma$ free is only slightly better than the model with $\sigma$ shared. So I'd conclude $\sigma$ is not in fact different between the sexes.
+
+### Does this result make biological sense for White Grunt?
+
+Nothing about this seems fishy to me. For the two sexes to mature at different ages seems perfectly reasonable. 
+
+
+## 6. Using the best model from question 5, predict maturity as a function of length for each sex using the parameter estimates from Solver in Excel or optim in R.
+```{r}
+f_lmat50 = results[1, 1]
+f_sig = results[1, 2]
+m_lmat50 = results[1, 3]
+m_sig = results[1, 4]
+
+females$pred <- 1 / (1 + exp(-(females$mtl - f_lmat50) / f_sig))
+males$pred <- 1 / (1 + exp(-(males$mtl - m_lmat50) / m_sig))
+```
+
+```{r}
+plot(
+    females$mtl, 
+    females$mat,
+    main="Female White Grunt Maturity",
+    xlab="Maximum Total Length (mm)",
+    ylab="Maturity (0=immature, 1=mature)"
+)
+lines(females$mtl[order(females$mtl)], females$pred[order(females$mtl)], col="red")
+```
+
+```{r}
+plot(
+    males$mtl,
+    males$mat,
+    main="Male White Grunt Maturity",
+    xlab="Maximum Total Length (mm)",
+    ylab="Maturity (0=immature, 1=mature)"
+)
+lines(males$mtl[order(males$mtl)], males$pred[order(males$mtl)], col="red")
+```
+
+## 7. Explore the effect of sample size on the ability to reliably (you can turn sharing on then off to reset the simulation) tell the male and female parameters apart. 
+
+### Adjust the female and male maturity length slider such that they are 10 mm apart, hold the sharpness at 0.05 for both, then determine the approximate sample size that results in $\hat \theta$ within 5 mm of the true (what you set in the slider).
+
+### Increase steepness for either females or males, how does increasing steepness affect the sample size needed?
+
+### Increase the difference between female and male maturity length to 25 mm with steepness at 0.03, what is the sample size needed to have the 95% confidence intervals not overlap between sexes?
 
 
 
