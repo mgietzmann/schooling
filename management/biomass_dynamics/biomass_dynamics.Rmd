@@ -1,0 +1,107 @@
+---
+title: Biomass Dynamics
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+setwd("/workspaces/schooling/management/biomass_dynamics/")
+data <- read.csv(
+    "biomass_data.csv", header=T, sep=","
+)
+colnames(data) <- c("year", "catch", "effort")
+data$cpue <- data$catch / data$effort
+head(data)
+```
+
+```{r}
+get_biomass <- function(catches, K, r) {
+    biomass <- numeric(length(catches))
+    biomass[1] <- K
+    for (i in 2:length(catches)) {
+        last_biomass <- biomass[i-1]
+        biomass[i] <- last_biomass + last_biomass * r * (-log(last_biomass / K)) - catches[i-1]
+    }
+    return(biomass)
+}
+
+get_cpue_pred <- function(biomass, q) {
+    cpue <- numeric(length(biomass))
+    for (i in 1:length(biomass)) {
+        cpue[i] <- biomass[i] * q
+    }
+    return(cpue) 
+}
+
+get_loss <- function(cpue, cpue_pred) {
+    loss <- numeric(length(cpue))
+    for (i in 1:length(cpue)) {
+        loss[i] <- (log(cpue[i]) - log(cpue_pred[i])) ^ 2
+    }
+    sigma <- sum(loss) / length(loss)
+    return(0.5 * length(loss) * log(sigma))
+}
+
+evaluate <- function(data, K, r, q) {
+    biomass <- get_biomass(data$catch, K, r)
+    cpue_pred <- get_cpue_pred(biomass, q)
+    loss <- get_loss(data$cpue, cpue_pred)
+    return(loss)
+}
+
+K = 115591.3636
+r = 0.058497677
+q = 0.0000296814275481331
+
+evaluate(data, K, r, q)
+```
+
+```{r}
+r_step = 0.001
+K_step = 1000
+steps = 50
+
+K = 115591.3636 - (steps / 2) * K_step
+r = 0.058497677 - (steps / 2) * r_step
+q = 0.0000296814275481331
+
+K_array = c()
+r_array = c()
+loss_array = c()
+
+for (i in 1:steps) {
+    K <- K + K_step
+    r = 0.058497677 - (steps / 2) * r_step
+    for (j in 1:steps) {
+        r <- r + r_step
+        loss <- evaluate(data, K, r, q)
+        K_array <- c(K_array, K)
+        r_array <- c(r_array, r)
+        loss_array <- c(loss_array, loss)
+    }
+}
+```
+
+```{r}
+df <- data.frame(K_array, r_array, loss_array)
+colnames(df) <- c("K", "r", "loss")
+df <- na.omit(df)
+df <- df[df$loss < 0,]
+df$loss <- as.numeric(df$loss)
+df$K <- as.numeric(df$K)
+df$r <- as.numeric(df$r)
+head(df)
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(df, aes(K, r, fill= loss)) + 
+  geom_tile()
+```
+
+```{r}
+conf <- df[df$loss <= -74.48 + 2.99,]
+conf$MSY <- conf$K * conf$r / exp(1)
+print(min(conf$MSY))
+print(max(conf$MSY))
+```
