@@ -1,0 +1,343 @@
+---
+title: FAS6337C - Lab 7
+author: Marcel Gietzmann-Sanders
+---
+
+# Estimation of Stock-Recruit Relationships
+
+You have obtained some density estimates for Walleye Sander vitreus from Lake Escanaba, Wisconsin. Age-0 and adult Walleye population estimates were obtained using intensive mark-recapture experiments. Data for spawners and recruits exist from 1958-1991. 
+
+The objective of the lab is to:
+
+- Fit the most appropriate stock-recruitment equation and assess the overall fit of the selected model. 
+
+
+```{r}
+setwd("/workspaces/schooling/population_dynamics/lab_7/")
+data <- read.table("data/walleye_data.txt", header=T, sep="")
+head(data)
+```
+
+## Plot recruits (R) on stock (S). 
+
+```{r}
+plot(
+    data$S,
+    data$R,
+    xlab="Stock",
+    ylab="Recruits"
+)
+```
+	
+### Does there appear to be a relationship? 
+If I didn't know we were looking for one in this lab, I'd never think there was a relationship here. Perhaps there's more variance in the middle versus the ends but that just feels natural with any kind of "clustered" data.
+
+### Is it linear or nonlinear?
+
+Given the change in variance with stock I'd say it's nonlinear. 
+
+## Non-linear Additive Error Structure Model: 
+	
+### Write an Excel/R equation to predict the number of recruits ($R$) for a given stock size (Eq. 1). $R=aSe^{-bS}$
+
+```{r}
+nonlinear_ricker <- function(params, S) {
+    a <- params[1]
+    b <- params[2]
+    return(a * S * exp(-b * S))
+}
+```
+
+### Using a maximum likelihood framework with a normal error distribution (additive error structure), fit the Ricker stock-recruit relationship to the data.
+
+```{r}
+normal_NLL <- function(params, pred, obs) {
+    sigma <- tail(params, 1)
+    return(-1 * sum(dnorm(obs, pred, sigma, log=T)))
+}
+```
+
+```{r}
+func <- function(params) {
+    pred <- nonlinear_ricker(params, data$S)
+    return(normal_NLL(params, pred, data$R))
+}
+
+params <- c(30, 0.001, 8000)
+for (i in 1:10) {
+    fit <- optim(params, func)
+    params <- fit$par
+}
+fit
+```
+
+```{r}
+data$nonlinear_additive <- nonlinear_ricker(params, data$S)
+plot(
+    data$S,
+    data$R,
+    xlab="Stock",
+    ylab="Recruits"
+)
+lines(
+    data$S[order(data$S)],
+    data$nonlinear_additive[order(data$S)],
+    col="red"
+)
+```
+
+### What are the estimates of a and b? 
+
+```{r}
+print(paste("a =", params[1]))
+print(paste("b =", params[2]))
+```
+
+## Linear Multiplicative Error Structure Model: 
+
+### Write an Excel/R equation to predict the log-transformed recruit–stock ratio $\ln{⁡\frac{R}{S}} =intercept+slope \bullet S$
+
+```{r}
+linear_multiplicative <- function(params, S) {
+    intercept <- params[1]
+    slope <- params[2]
+    return(intercept + slope * S)
+}
+```
+
+### Using linear regression and a maximum likelihood framework with a normal error distribution, fit the Ricker stock-recruit relationship:
+
+```{r}
+func <- function(params) {
+    pred <- linear_multiplicative(params, data$S)
+    obs <- log(data$R / data$S)
+    return(normal_NLL(params, pred, obs))
+}
+
+params <- c(30, -0.001, 1)
+for (i in 1:10) {
+    fit <- optim(params, func)
+    params <- fit$par
+}
+fit
+```
+
+```{r}
+data$linear_multiplicative <- exp(linear_multiplicative(params, data$S)) * data$S
+plot(
+    data$S,
+    data$R,
+    xlab="Stock",
+    ylab="Recruits"
+)
+lines(
+    data$S[order(data$S)],
+    data$nonlinear_additive[order(data$S)],
+    col="red"
+)
+lines(
+    data$S[order(data$S)],
+    data$linear_multiplicative[order(data$S)],
+    col="blue"
+)
+```
+
+### Convert the slope and intercept, output the parameters a and b.
+
+```{r}
+print(paste("a =", exp(params[1])))
+print(paste("b =", -params[2]))
+```
+
+### Are they the same parameters as the additive error structure model; if not, how did they change? 
+
+They are not the same, a dropped slightly and b rose. The overall effect as can be seen from the plot is the predictions shrunk.
+
+## Linear Multiplicative Error Structure Model version 2
+
+### Write an Excel/R equation to predict the log-transformed recruits.
+
+We'll just be reusing the nonlinear_ricker and taking the logarithm before feeding it to NLL.
+
+### Using a maximum likelihood framework, fit the Ricker stock-recruit relationship with a normal error distribution 
+
+```{r}
+func <- function(params) {
+    pred <- nonlinear_ricker(params, data$S)
+    obs <- data$R
+    return(normal_NLL(params, log(pred), log(obs)))
+}
+
+params <- c(30, -0.001, 1)
+for (i in 1:10) {
+    fit <- optim(params, func)
+    params <- fit$par
+}
+fit
+```
+
+```{r}
+data$linear_multiplicative_v2 <- nonlinear_ricker(params, data$S)
+plot(
+    data$S,
+    data$R,
+    xlab="Stock",
+    ylab="Recruits"
+)
+lines(
+    data$S[order(data$S)],
+    data$nonlinear_additive[order(data$S)],
+    col="red"
+)
+lines(
+    data$S[order(data$S)],
+    data$linear_multiplicative[order(data$S)],
+    col="blue"
+)
+lines(
+    data$S[order(data$S)],
+    data$linear_multiplicative_v2[order(data$S)],
+    col="yellow"
+)
+```
+
+### How do the parameter estimates compare to linear regression fit 
+
+They are the same. 
+
+## Nonlinear Multiplicative Error Structure Model
+
+### Write an Excel/R equation to predict recruits
+
+We will reuse nonlinear ricker.
+
+### •	Using a maximum likelihood framework, fit the Ricker stock-recruit relationship with a log-normal error distribution
+
+```{r}
+log_NLL <- function(params, pred, obs) {
+    sigma <- tail(params, 1)
+    return(-1 * sum(dlnorm(obs, log(pred), sigma, log=T)))
+}
+
+func <- function(params) {
+    pred <- nonlinear_ricker(params, data$S)
+    obs <- data$R
+    return(log_NLL(params, pred, obs))
+}
+
+params <- c(30, -0.001, 1)
+for (i in 1:10) {
+    fit <- optim(params, func)
+    params <- fit$par
+}
+fit
+```
+
+```{r}
+data$nonlinear_multiplicative <- nonlinear_ricker(params, data$S)
+plot(
+    data$S,
+    data$R,
+    xlab="Stock",
+    ylab="Recruits"
+)
+lines(
+    data$S[order(data$S)],
+    data$nonlinear_additive[order(data$S)],
+    col="red"
+)
+lines(
+    data$S[order(data$S)],
+    data$linear_multiplicative[order(data$S)],
+    col="blue"
+)
+lines(
+    data$S[order(data$S)],
+    data$linear_multiplicative_v2[order(data$S)],
+    col="yellow"
+)
+lines(
+    data$S[order(data$S)],
+    data$nonlinear_multiplicative[order(data$S)],
+    col="green"
+)
+```
+
+### Does it give the same parameter estimates as the linear regression? 
+
+Same estimates again.
+
+## Compare all fits of the Ricker by predicting the expected recruitment for a range of adults from 0 to 3000 adults, then plotting each of these predictions in one plot (make sure to label the predictions).
+
+**TODO**
+
+## Nonlinear Multiplicative Error Structure Model—Beverton-Holt
+
+### Write an Excel/R equation to predict recruits using the Beverton-Holt stock-recruit relationship 
+
+```{r}
+beverton_holt <- function(params, S) {
+    a <- params[1]
+    b <- params[2]
+    return(a * S / (1 + b * S))
+}
+```
+
+### Using a maximum likelihood framework, fit the Beverton-Holt stock-recruit relationship with a log-normal error distribution 
+
+```{r}
+func <- function(params) {
+    pred <- beverton_holt(params, data$S)
+    obs <- data$R
+    return(log_NLL(params, pred, obs))
+}
+
+params <- c(30000, 4, 1)
+for (i in 1:10) {
+    fit <- optim(params, func)
+    params <- fit$par
+}
+fit
+```
+
+### Output the predicted values and plot them against the raw data. 
+
+```{r}
+data$beverton_holt <- beverton_holt(params, data$S)
+plot(
+    data$S,
+    data$R,
+    xlab="Stock",
+    ylab="Recruits"
+)
+lines(
+    data$S[order(data$S)],
+    data$nonlinear_additive[order(data$S)],
+    col="red"
+)
+lines(
+    data$S[order(data$S)],
+    data$linear_multiplicative[order(data$S)],
+    col="blue"
+)
+lines(
+    data$S[order(data$S)],
+    data$linear_multiplicative_v2[order(data$S)],
+    col="yellow"
+)
+lines(
+    data$S[order(data$S)],
+    data$nonlinear_multiplicative[order(data$S)],
+    col="green"
+)
+lines(
+    data$S[order(data$S)],
+    data$beverton_holt[order(data$S)],
+    col="purple"
+)
+```
+
+### Which model appears to fit the data better?
+
+Honestly a mean would probably do as well as the Beverton-Holt model. So I'm going to go with the Ricker is better. Technically the Ricker also has lower loss. But honestly it's not by much.
+
