@@ -1,0 +1,331 @@
+---
+title: FAS6337C - Lab 9
+author: Marcel Gietzmann-Sanders
+---
+
+
+## Building the Model
+
+### Length at Age
+```{r}
+A_max <- 35
+ages <- seq(1, A_max, 1)
+
+L_inf <- 1032
+K <- 0.11
+t_0 <- 0
+
+get_lengths <- function(ages, L_inf, K, t_0){
+  return(L_inf * (1 - exp(-K * (ages - t_0))))
+}
+
+lengths <- get_lengths(ages, L_inf, K, t_0)
+
+plot(
+  x=ages,
+  y=lengths,
+  type="l",
+  xlab="Age",
+  ylab="Length (mm)"
+)
+```
+
+### Weight at Length
+```{r}
+a <- 5.25 * 10 ^ -6
+b <- 3.17
+
+get_weights <- function(lengths, a, b){
+  return(a * lengths ^ b / 1000)
+}
+
+weights <- get_weights(lengths, a, b)
+
+plot(
+  x=lengths,
+  y=weights,
+  type="l",
+  xlab="Length (mm)",
+  ylab="Weight (kg)"
+)
+```
+
+### Fecundity at Weight
+```{r}
+L_mat_50 <- 450
+W_mat_50 <- get_weights(L_mat_50, a, b)
+
+get_fecundity <- function(weights, L_mat_50) {
+  W_mat_50 <- get_weights(L_mat_50, a, b)
+  return(pmax(0, weights - W_mat_50))
+}
+
+fecundity <- get_fecundity(weights, L_mat_50)
+
+plot(
+  x=weights,
+  y=fecundity,
+  type="l",
+  xlab="Weight (kg)",
+  ylab="Fecundity"
+)
+```
+
+### Vulnerability to Capture
+```{r}
+length_sigma <- 0.1
+L_cap_50 <- 350
+
+get_vul_cap <- function(lengths, L_cap_50, length_sigma) {
+  sigma <- L_cap_50 * length_sigma
+  return(
+    1 / (1 + exp((L_cap_50 - lengths)/sigma))
+  )
+}
+
+vul_cap <- get_vul_cap(lengths, L_cap_50, length_sigma)
+
+plot(
+  x=lengths,
+  y=vul_cap,
+  type="l",
+  xlab="Length (mm)",
+  ylab="Vulnerability to Capture"
+)
+```
+
+### Chance Harvestable
+```{r}
+minLL <- 400
+maxLL <- 650
+
+get_chance_harvestable <- function(lengths, minLL, maxLL, length_sigma) {
+  max_sigma <- maxLL * length_sigma
+  min_sigma <- minLL * length_sigma
+  return(
+    1 / (1 + exp((minLL - lengths)/min_sigma))
+    - 1 / (1 + exp((maxLL - lengths)/max_sigma))
+  )
+}
+
+chance_harvestable <- get_chance_harvestable(
+  lengths, minLL, maxLL, length_sigma
+)
+
+plot(
+  x=lengths,
+  y=chance_harvestable,
+  type="l",
+  xlab="Length (mm)",
+  ylab="Chance Harvestable"
+)
+```
+
+### Chance Trophy
+```{r}
+L_tropy_50 <- 800
+
+get_chance_trophy <- function(lengths, L_tropy_50, length_sigma) {
+  sigma <- L_tropy_50 * length_sigma
+  return(
+    1 / (1 + exp((L_tropy_50 - lengths)/sigma))
+  )
+}
+
+chance_trophy <- get_chance_trophy(lengths, L_tropy_50, length_sigma)
+
+plot(
+  x=lengths,
+  y=chance_trophy,
+  type="l",
+  xlab="Length (mm)",
+  ylab="Chance Trophy"
+)
+```
+
+### Survival Unfished
+```{r}
+get_S <- function(K) {
+  return(exp(-1.5 * K))
+}
+
+get_natural_factor <- function(A_max, S) {
+    return(c(1, rep(S, A_max - 1)))
+}
+
+natural_factor <- get_natural_factor(A_max, get_S(K))
+
+plot(
+  x=ages,
+  y=cumprod(natural_factor),
+  type="l",
+  xlab="Age",
+  ylab="Survival Unfished"
+)
+```
+
+
+### Survival Fished
+```{r}
+U_harv <- 0.2
+U_caught <- 0.1
+D <- 0.15
+
+get_harvest_factor <- function(
+  U_harv, vul_cap, chance_harvestable
+) {
+  return(
+    c(
+      1, 1 - U_harv * vul_cap[-(1:1)] * chance_harvestable[-(1:1)]
+    )
+  )
+}
+
+get_discard_factor <- function(
+    U_harv, U_caught, vul_cap, chance_harvestable, D
+) {
+  U <- U_harv + U_caught
+  return(
+    c(
+      1, 1 - (
+        U * vul_cap[-(1:1)] 
+        - U_harv * vul_cap[-(1:1)] * chance_harvestable[-(1:1)]
+      ) * D
+    )
+  )
+}
+
+harvest_factor <- get_harvest_factor(
+  U_harv, vul_cap, chance_harvestable
+)
+
+discard_factor <- get_discard_factor(
+  U_harv, U_caught, vul_cap, chance_harvestable, D
+)
+
+plot(
+  x=ages,
+  y=cumprod(natural_factor * harvest_factor * discard_factor),
+  type="l",
+  xlab="Age",
+  ylab="Survival Fished"
+)
+```
+
+### Recruitment 
+
+#### Recruiment Params
+```{r}
+Ro <- 1000
+recK <- 18
+
+get_recruitment_params <- function(
+  Ro, recK, fecundity, natural_factor
+) {
+  epro <- sum(fecundity * cumprod(natural_factor))
+  Eo <- Ro * epro
+  bha <- recK / epro
+  bhb <- (recK - 1) / Eo
+  return(c(bha, bhb))
+}
+
+recruiment_params <- get_recruitment_params(
+  Ro, recK, fecundity, natural_factor
+)
+bha <- recruiment_params[1]
+bhb <- recruiment_params[2]
+
+c(bha, bhb)
+```
+
+#### Recruitment Variability
+```{r}
+get_recruitment <- function(
+    bha, bhb, sigma, total_fecundity
+) {
+  base_recruitment <- bha * total_fecundity / (1 + bhb * total_fecundity)
+  error <- exp(rnorm(length(total_fecundity), 0, sigma) - 0.5 * sigma ^ 2)
+  return(base_recruitment * error)
+}
+
+rec_sigma <- 0.2
+total_fecundity <- rep(sum(fecundity * cumprod(natural_factor)) * Ro, 100)
+recruitment <- get_recruitment(bha, bhb, rec_sigma, total_fecundity)
+hist(recruitment)
+```
+
+#### The Simulation
+```{r}
+
+simulate <- function(
+  years, # years to simulate
+  A_max, # ages to consider
+  L_inf, K, t_0, # length params
+  a, b, # weight params
+  L_mat_50, # fecundity params
+  L_cap_50, # vulnerability params
+  minLL, maxLL, # harvestability params
+  U_harv, U_caught, D, # survival params
+  Ro, recK, # recruitment params
+  length_sigma, rec_sigma # variability params
+) {
+  # build all of the modeling components
+  ages <- seq(1, A_max, 1)
+  lengths <- get_lengths(ages, L_inf, K, t_0)
+  weights <- get_weights(lengths, a, b)
+  fecundity <- get_fecundity(weights, L_mat_50)
+  vul_cap <- get_vul_cap(lengths, L_cap_50, length_sigma)
+  chance_harvestable <- get_chance_harvestable(
+    lengths, minLL, maxLL, length_sigma
+  )
+  S <- get_S(K)
+  natural_factor <- get_natural_factor(A_max, S)
+  harvest_factor <- get_harvest_factor(
+    U_harv, vul_cap, chance_harvestable
+  )
+  discard_factor <- get_discard_factor(
+    U_harv, U_caught, vul_cap, chance_harvestable, D
+  )
+  recruitment_params <- get_recruitment_params(
+    Ro, recK, fecundity, natural_factor
+  )
+  bha <- recruitment_params[1]
+  bhb <- recruitment_params[2]
+
+  # initialize the population
+  population <- matrix(0, nrow=years, ncol=A_max)
+  population[1,] <- Ro * cumprod(natural_factor)
+
+  # simulate forward
+  for (i in 2:years) {
+    # get the total fecundity
+    total_fecundity <- sum(fecundity * population[i-1,])
+
+    # get the recruitment
+    recruitment <- get_recruitment(
+      bha, bhb, rec_sigma, total_fecundity
+    )
+
+    # get the new population
+    population[i,2:A_max] <- (
+      population[i-1,1:(A_max-1)] * natural_factor[2:A_max] * harvest_factor[2:A_max] * discard_factor[2:A_max]
+    )
+    population[i,1] <- recruitment
+  }
+  return(population)
+}
+
+simulate(
+  10,
+  A_max,
+  L_inf, K, t_0,
+  a, b,
+  L_mat_50,
+  L_cap_50,
+  minLL, maxLL,
+  U_harv, U_caught, D,
+  Ro, recK,
+  length_sigma, rec_sigma
+)
+```
+
