@@ -395,6 +395,175 @@ lines(
 legend(x=1.5, y=1300, pch=19, legend=c("Female", "Male"), col=c("orange", "blue"))
 ```
 
+# 3. Fit a series of logistic maturity models to the King Mackerel data. Determine if males and females exhibit sexually dimorphic maturity.
+
+```{r}
+get_nll <- function(theta) {
+    f_lmat50 <- theta[1]
+    f_sig <- theta[2]
+    m_lmat50 <- theta[3]
+    m_sig <- theta[4]
+
+    prob_mat_female <- 1 / (1 + exp(-(female_data$TL - f_lmat50) / f_sig))
+    prob_mat_male <- 1 / (1 + exp(-(male_data$TL - m_lmat50) / m_sig))
+    nll_female <- -1*sum(dbinom(female_data$Mat, size=1, prob=prob_mat_female, log=T))
+    nll_male <- -1*sum(dbinom(male_data$Mat, size=1, prob=prob_mat_male, log=T))
+    return(nll_female + nll_male)
+}
+```
+
+```{r}
+subset_theta <- function(theta, params_to_fit) {
+    input <- c()
+    for (i in 1:length(params_to_fit)) {
+        input <- append(input, theta[params_to_fit[i]])
+    }
+    return(input)
+}
+
+update_theta <- function(theta, input, params_to_fit, index_to_share) {
+    v = theta
+    for (i in 1:length(params_to_fit)) {
+        v[params_to_fit[i]] <- input[i]
+    }
+    for (i in 1:length(v)) {
+        if (!(i %in% params_to_fit)) {
+            v[i] <- v[index_to_share[i]]
+        }
+    }
+    return(v)
+}
+
+do_fit <- function(theta, params_to_fit, index_to_share) {
+
+    fun <- function(input) {
+        v = update_theta(theta, input, params_to_fit, index_to_share)
+        return(get_nll(v))
+    }
+
+    input <- subset_theta(theta, params_to_fit)
+    for (i in 1:10) {
+        fit <- optim(input, fun, hessian=T)
+        input <- fit$par
+    }
+    theta <- update_theta(theta, input, params_to_fit, index_to_share)
+    return(theta)
+}
+
+get_aic <- function(theta, params_to_fit) {
+    nll <- get_nll(theta)
+    k <- length(params_to_fit)
+    aic <- 2*k + 2*nll
+    return(c(nll, k, aic))
+}
+```
+
+## a. Use AIC model comparison to determine if growth rates are sexually dimorphic.
+
+```{r}
+
+starting_guess <- c(200, 20, 200, 20)
+index_to_share <- c(3, 4, 1, 2)
+row_names <- c()
+col_names <- c("f_lmat50", "f_sig", "m_lmat50", "m_sig", "nll", "params", "AIC")
+
+params_to_fit <- c(1, 2, 3)
+theta <- do_fit(starting_guess, params_to_fit, index_to_share)
+aic_info <- get_aic(theta, params_to_fit)
+row1 <- c(theta, aic_info)
+row_names <- append(row_names, "L(h)sig(.)")
+
+params_to_fit <- c(1, 2, 4)
+theta <- do_fit(starting_guess, params_to_fit, index_to_share)
+aic_info <- get_aic(theta, params_to_fit)
+row2 <- c(theta, aic_info)
+row_names <- append(row_names, "L(.)sig(h)")
+
+params_to_fit <- c(1, 2)
+theta <- do_fit(starting_guess, params_to_fit, index_to_share)
+aic_info <- get_aic(theta, params_to_fit)
+row3 <- c(theta, aic_info)
+row_names <- append(row_names, "L(.)sig(.)")
+
+params_to_fit <- c(1, 2, 3, 4)
+theta <- do_fit(starting_guess, params_to_fit, index_to_share)
+aic_info <- get_aic(theta, params_to_fit)
+row4 <- c(theta, aic_info)
+row_names <- append(row_names, "L(h)sig(h)")
+```
+
+## b. Report an AIC table.
+```{r}
+results <- rbind(row1, row2, row3, row4)
+colnames(results) <- col_names
+rownames(results) <- row_names
+results <- data.frame(results)
+
+results <- results[order(results$AIC),]
+results$delta_aic <- results$AIC - results$AIC[1]
+results
+```
+
+## c. Which maturity parameters differ between sexes in your top model?
+Technically the top model differs only in $\sigma$ but honestly the top three models are barely distuinguishable on the basis of AIC alone. I'm going to go, in this case, with the model with the most degrees of freedom where both $L_{mat}$ and $\sigma$ are free. That way if there are biological differences we are capturing them. 
+
+## d. Report the logistic maturity model parameter means and 95% confidence intervals from your top model.
+
+```{r}
+theta <- results[2, 1:4]
+for (i in 1:10) {
+    fit <- optim(theta, get_nll, hessian=T)
+    theta <- fit$par
+}
+theta
+```
+
+```{r}
+stderr <- sqrt(diag(solve(fit$hessian)))
+stderr
+
+ALPHA <- 0.05
+P_L95 <- (fit$par - qnorm(1-(ALPHA/2)) * stderr)
+P_MEAN <- fit$par
+P_U95 <- (fit$par + qnorm(1-(ALPHA/2)) * stderr)
+
+tab <- rbind(P_L95, P_MEAN, P_U95)
+colnames(tab) <- c('f_lmat50', 'f_sig', 'm_lmat50', 'm_sig')
+tab
+```
+
+## e. Plot the resulting male and female predicted maturity at length from your top model against the data.
+
+```{r}
+plot(
+    female_data$TL,
+    female_data$Mat,
+    xlab="Length",
+    ylab="Maturity",
+    main="Female Maturity-Length Relationship",
+)
+lines(
+    female_data$TL[order(female_data$TL)],
+    1 / (1 + exp(-(female_data$TL[order(female_data$TL)] - fit$par[1]) / fit$par[2])),
+    col="orange"
+)
+```
+
+```{r}
+plot(
+    male_data$TL,
+    male_data$Mat,
+    xlab="Length",
+    ylab="Maturity",
+    main="Male Maturity-Length Relationship",
+)
+lines(
+    male_data$TL[order(male_data$TL)],
+    1 / (1 + exp(-(male_data$TL[order(male_data$TL)] - fit$par[3]) / fit$par[4])),
+    col="blue"
+)
+```
+
 
 
 
