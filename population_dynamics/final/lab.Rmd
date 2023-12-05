@@ -4,6 +4,15 @@ author: Marcel Gietzmann-Sanders
 ---
 
 ```{r}
+library(lme4)
+
+col2rgbA<-function(color,transparency)
+{
+  rgb(t(col2rgb(color))/255,alpha=transparency)
+}
+```
+
+```{r}
 setwd("/workspaces/schooling/population_dynamics/final/") 
 data <- read.table("data/King_Mackerel_sim-1.csv", header=T, sep=",") 
 data$Age <- as.numeric(data$Age)
@@ -564,8 +573,196 @@ lines(
 )
 ```
 
+# 4. Using the age composition data from the fishery dependent samples:
+
+```{r}
+fishery_data <- data[data$Fishery,]
+aged <- na.omit(fishery_data[,c('Age', 'TL')])
+aged$cmgrp <- floor(aged$TL / 10)
+(length(aged$TL))
+(length(fishery_data$TL))
+head(aged)
+```
+
+## a. Generate an age-length key and project the age of samples with only lengths.
+
+```{r}
+get_ALK <- function(aged) {
+    ALK <- data.frame(
+        prop.table(
+            table(aged$Age, aged$cmgrp),
+            margin=2
+        )
+    )
+    names(ALK) <- c("Age","cmgrp","prop") 
+    ALK$Age <- as.numeric(as.character(ALK$Age))
+    ALK$cmgrp <- as.numeric(as.character(ALK$cmgrp))
+    ALK$prop <- as.numeric(as.character(ALK$prop))
+    ALK$col.prop <- hcl.colors(101,'viridis')[round(ALK$prop,2)*100+1]
+    return(ALK)
+}
+
+ALK <- get_ALK(aged)
+head(ALK)
+```
+
+```{r}
+get_catch_count_info <- function(catch, ALK) {
+    catch_summary <- data.frame(table(catch$cmgrp))
+    names(catch_summary) <- c("cmgrp", "total")
+    catch_summary$cmgrp <- as.numeric(as.character(catch_summary$cmgrp))
+    catch_summary$total <- as.numeric(as.character(catch_summary$total))
+    info <- merge(ALK, catch_summary)
+    info$count <- info$total * info$prop
+    return(info)
+}
+
+catch <- na.omit(fishery_data[, c('TL', 'Fishery')])
+catch$cmgrp <- floor(catch$TL / 10)
+catch_info <- get_catch_count_info(catch, ALK)
+head(catch_info)
+```
+
+```{r}
+get_CAA <- function(catch_info) {
+    CAA <- aggregate(count~Age, data=catch_info, sum)
+    return(CAA)
+}
+
+(CAA <- get_CAA(catch_info))
+```
+
+### i. Plot a bubble plot of the age-length key.
 
 
+```{r}
+plot_ALK <- function(ALK, main) {
+    # I want the circles to have area equal to
+    # my proportion (for easier interpretation)
+    # this would mean prop <- 4 * pi * r^2 or 
+    # r <- sqrt(prop / (4 * pi))
+    with(
+        ALK, {
+            symbols(
+                x=cmgrp,
+                y=Age,
+                circles=sqrt(prop/(4 * pi)) * 2,
+                inches=F,
+                fg = col.prop,
+                bg = col2rgbA(col.prop,0.5),
+                xlab="Centimeter Group",
+                ylab="Age",
+                main=main
+            )
+        }
+    )
+}
+
+plot_ALK(ALK, "Age-Length Key")
+```
+
+### ii. Plot the total catch at age data.
+
+```{r}
+with(
+    CAA, {
+        plot(
+            Age,
+            count,
+            type='b',
+            pch=16,
+            col="black",
+            xlab="Age",
+            ylab="Count",
+            main='Catch at Age'
+        )
+    }
+)
+```
+
+## b. Estimate and report the instantaneous (Z) and finite (A) total mortality for this population. Justify the method you used to estimate Z and the data you included in the estimate.
+
+```{r}
+reshape_for_millar <- function(CAA) {
+    age_at_peak <- CAA$Age[which.max(CAA$count)]
+    CAA_lim <- CAA[CAA$Age >= age_at_peak,]
+
+    max_age <- max(CAA_lim$Age)
+    CAA_ext <- rbind(
+        CAA_lim,
+        cbind(
+            Age=(max_age+1):(2*max_age),
+            count=rep(0,max_age)
+        )
+    )
+    CAA_ext$count <- floor(CAA_ext$count)
+    return(CAA_ext)
+}
+
+get_millar_fit <- function(CAA) {
+    CAA_ext <- reshape_for_millar(CAA)
+
+    fit <- glmer(
+        count ~ Age + (1|Age),
+        family=poisson,
+        data=CAA_ext
+    )
+    print(summary(fit))
+    return(fit)
+}
+
+(millar_fit <- get_millar_fit(CAA))
+```
+
+```{r}
+get_params_from_millar <- function(millar_fit, alpha) {
+    coef <- summary(millar_fit)$coef
+    Z <- coef[2, 1]
+    std <- coef[2, 2]
+    ZU <- min(Z + qnorm(1-alpha/2)*std, 0)
+    ZL <- Z - qnorm(1-alpha/2)*std
+
+    A <- 1 - exp(Z)
+    AU <- 1 - exp(ZU)
+    AL <- 1 - exp(ZL)
+
+    S <- exp(Z)
+    SU <- exp(ZU)
+    SL <- exp(ZL)
+
+    m <- matrix(c(ZL, Z, ZU, AL, A, AU, SL, S, SU),3,3)
+        colnames(m) <- c("Z", "A", "S")
+        rownames(m) <- c("Lower", "MLE", "Upper")
+    return(m)
+}
+
+get_params_from_millar(millar_fit, 0.05)
+```
+
+## c. Choose a single natural mortality surrogate method and estimate the natural mortality rate (M) for this population using your chosen surrogate method (use female-based parameters where appropriate).
+
+Using the surrogate method from our Yield per Recruit analyses in the previous assignments we have:
+
+$$M = -1.5K$$ 
+
+```{r}
+(M = -1.5 * 0.2257593)
+```
+
+
+## d. What is the fishing mortality rate (F) for this population assuming the M you estimated using surrogate methods?
+
+```{r}
+Z = -0.4718949
+(F = Z - M)
+```
+
+### i. Discuss your level of confidence for this F estimate.
+
+First of all we have to consider the uncertainty in Z itself. Z ranged from -0.51 to -0.43 which is a range of -0.08.
+This range is itself equivalent to the value of F that we are estimated at present. Furthermore this M was taken from a
+surrogate method which we know is highly approximate in the first place. So I'd definitely don't have a lot of confidence
+in this estimate of F.
 
 
 
