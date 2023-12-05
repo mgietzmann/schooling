@@ -764,6 +764,339 @@ This range is itself equivalent to the value of F that we are estimated at prese
 surrogate method which we know is highly approximate in the first place. So I'd definitely don't have a lot of confidence
 in this estimate of F.
 
+# 5. Given the estimates of length-weight, growth, maturity, and mortality you estimated above (use your top models):
+
+## a. Conduct an equilibrium Yield-per-Recruit analysis based solely on female King Mackerel.
+
+### Length at Age
+```{r}
+A_max <- 23
+ages <- seq(1, A_max, 1)
+
+L_inf <- 1214.4
+K <- 0.226
+t_0 <- -1.93
+
+get_lengths <- function(ages, L_inf, K, t_0){
+  return(L_inf * (1 - exp(-K * (ages - t_0))))
+}
+
+lengths <- get_lengths(ages, L_inf, K, t_0)
+
+plot(
+  x=ages,
+  y=lengths,
+  type="l",
+  xlab="Age",
+  ylab="Length (mm)"
+)
+```
+
+### Weight at Length
+```{r}
+a <- 7.01 * 10 ^ -9
+b <- 3.01
+
+get_weights <- function(lengths, a, b){
+  return(a * lengths ^ b / 1000)
+}
+
+weights <- get_weights(lengths, a, b)
+
+plot(
+  x=lengths,
+  y=weights,
+  type="l",
+  xlab="Length (mm)",
+  ylab="Weight (kg)"
+)
+```
+
+
+### Fecundity at Weight
+```{r}
+L_mat_50 <- 567.7
+
+get_fecundity <- function(weights, L_mat_50) {
+  W_mat_50 <- get_weights(L_mat_50, a, b)
+  return(pmax(0, weights - W_mat_50))
+}
+
+fecundity <- get_fecundity(weights, L_mat_50)
+
+plot(
+  x=weights,
+  y=fecundity,
+  type="l",
+  xlab="Weight (kg)",
+  ylab="Fecundity"
+)
+```
+
+### Vulnerability to Capture
+```{r}
+length_sigma <- 0.1
+L_cap_50 <- 508
+
+get_vul_cap <- function(lengths, L_cap_50, length_sigma) {
+  sigma <- L_cap_50 * length_sigma
+  return(
+    1 / (1 + exp((L_cap_50 - lengths)/sigma))
+  )
+}
+
+vul_cap <- get_vul_cap(lengths, L_cap_50, length_sigma)
+
+plot(
+  x=lengths,
+  y=vul_cap,
+  type="l",
+  xlab="Length (mm)",
+  ylab="Vulnerability to Capture"
+)
+```
+
+### Chance Harvestable
+```{r}
+minLL <- 609.6
+maxLL <- 2400
+
+get_chance_harvestable <- function(lengths, minLL, maxLL, length_sigma) {
+  max_sigma <- maxLL * length_sigma
+  min_sigma <- minLL * length_sigma
+  return(
+    1 / (1 + exp((minLL - lengths)/min_sigma))
+    - 1 / (1 + exp((maxLL - lengths)/max_sigma))
+  )
+}
+
+chance_harvestable <- get_chance_harvestable(
+  lengths, minLL, maxLL, length_sigma
+)
+
+plot(
+  x=lengths,
+  y=chance_harvestable,
+  type="l",
+  xlab="Length (mm)",
+  ylab="Chance Harvestable"
+)
+```
+
+### Survival Unfished
+```{r}
+get_S <- function(M) {
+  return(exp(M))
+}
+
+get_natural_factor <- function(A_max, S) {
+    return(c(1, rep(S, A_max - 1)))
+}
+
+M <- -0.17
+natural_factor <- get_natural_factor(A_max, get_S(M))
+
+plot(
+  x=ages,
+  y=cumprod(natural_factor),
+  type="l",
+  xlab="Age",
+  ylab="Survival Unfished"
+)
+```
+
+### Survival Fished
+```{r}
+U_harv <- 0.26
+U_caught <- 0.0
+D <- 0.2
+
+get_harvest_factor <- function(
+  U_harv, vul_cap, chance_harvestable
+) {
+  return(
+    c(
+      1, 1 - U_harv * chance_harvestable[1:length(chance_harvestable)-1]
+    )
+  )
+}
+
+get_discard_factor <- function(
+    U_harv, U_caught, vul_cap, chance_harvestable, D
+) {
+  U <- U_harv + U_caught
+  return(
+    c(
+      1, 1 - (
+        U * vul_cap[1:length(vul_cap)-1] 
+        - U_harv * chance_harvestable[1:length(chance_harvestable)-1]
+      ) * D
+    )
+  )
+}
+
+harvest_factor <- get_harvest_factor(
+  U_harv, vul_cap, chance_harvestable
+)
+
+discard_factor <- get_discard_factor(
+  U_harv, U_caught, vul_cap, chance_harvestable, D
+)
+
+plot(
+  x=ages,
+  y=cumprod(natural_factor * harvest_factor * discard_factor),
+  type="l",
+  xlab="Age",
+  ylab="Survival Fished"
+)
+```
+
+## b. Report in a table all the parameters you used to conduct this analysis.
+
+| Parameter | Value |
+| --- | --- |
+| $a_{max}$ | 23 |
+| $a$ | 7.01e-09|
+| $b$ | 3.01 | 
+| $L_{\infty}$ |  1214.4 |
+| $K$ | 0.226 |
+| $t_0$ | -1.93 |
+| $L_{mat}$ | 567.7 | 
+| $M$ | -0.17|
+| $F$ | -0.302 | 
+| $U_{harv}$ | 0.26 |
+| $U_{caught}$ | 0.0 | 
+| $D$ | 0.2 |
+| $L_{cap}$ | 508 |
+| $minLL$ | 609.6 |
+| $maxLL$ | 2400 | 
+
+## c. Report in a table the life history, vulnerability, and survival vectors you used to conduct this analysis.
+
+```{r}
+build_table <- function(
+  A_max, # ages to consider
+  L_inf, K, t_0, # length params
+  a, b, # weight params
+  L_mat_50, # fecundity params
+  L_cap_50, # vulnerability params
+  minLL, maxLL, # harvestability params
+  M, U_harv, U_caught, D, # survival params
+  length_sigma # variability params
+) {
+  # build all of the modeling components
+  ages <- seq(1, A_max, 1)
+  lengths <- get_lengths(ages, L_inf, K, t_0)
+  weights <- get_weights(lengths, a, b)
+  fecundity <- get_fecundity(weights, L_mat_50)
+  vul_cap <- get_vul_cap(lengths, L_cap_50, length_sigma)
+  chance_harvestable <- get_chance_harvestable(
+    lengths, minLL, maxLL, length_sigma
+  )
+  S <- get_S(M)
+  natural_factor <- get_natural_factor(A_max, S)
+  harvest_factor <- get_harvest_factor(
+    U_harv, vul_cap, chance_harvestable
+  )
+  discard_factor <- get_discard_factor(
+    U_harv, U_caught, vul_cap, chance_harvestable, D
+  )
+  tab <- rbind(
+    lengths, weights, vul_cap, chance_harvestable, cumprod(natural_factor),
+    cumprod(natural_factor * harvest_factor * discard_factor), fecundity
+  )
+  colnames(tab) <- ages
+  rownames(tab) <- c(
+    "length", "weight", "vul_cap", "vul_harvest", "survival_unfished",
+    "survival_fished", "fecundity"
+  )
+  return(round(tab, 2))
+}
+
+tab <- build_table(
+  A_max, L_inf, K, t_0, a, b, L_mat_50, L_cap_50, minLL, maxLL, M, U_harv,
+  U_caught, D, length_sigma
+)
+tab
+```
+
+## d. Do you believe that this King Mackerel population is undergoing either growth or recruitment overfishing?
+
+```{r}
+get_metrics <- function(tab, U_harv) {
+    results <- c(
+        sum(tab["survival_fished",] * tab["fecundity",]) / sum(tab["survival_unfished",] * tab["fecundity",]),
+        sum(tab['weight',] * tab['vul_harvest',] * tab['survival_fished',]) * U_harv
+    )
+    return(results)
+}
+
+get_metrics(tab, U_harv)
+```
+
+```{r}
+U_vec <- seq(0, 1, 0.01)
+yield_vec <- c()
+for (U in U_vec) {
+    tab <- build_table(
+        A_max, L_inf, K, t_0, a, b, L_mat_50, L_cap_50, minLL, maxLL, M, U,
+        U_caught, D, length_sigma
+    )
+    metrics <- get_metrics(tab, U)
+    yield_vec <- c(yield_vec, metrics[2])
+}
+
+(U_vec[which.max(yield_vec)])
+```
+
+```{r}
+plot(
+    x=U_vec,
+    y=yield_vec,
+    type="l",
+    xlab="U",
+    ylab="Yield"
+)
+```
+
+## e. What would be the minimum length limit necessary to maintain high yields and prevent growth and recruitment overfishing given the U?
+
+```{r}
+minLL_vec <- seq(0, 1500, 25)
+yield_at_U_vec <- c()
+U_at_max_yield_vec <- c()
+spr_at_U_vec <- c()
+U_vec <- seq(0, 1, 0.01)
+for (new_minLL in minLL_vec) {
+    yield_vec <- c()
+    spr_vec <- c()
+    for (U in U_vec) {
+        tab <- build_table(
+            A_max, L_inf, K, t_0, a, b, L_mat_50, L_cap_50, new_minLL, maxLL, M, U,
+            U_caught, D, length_sigma
+        )
+        metrics <- get_metrics(tab, U)
+        yield_vec <- c(yield_vec, metrics[2])
+        spr_vec <- c(spr_vec, metrics[1])
+    }
+    yield_at_U_vec <- c(yield_at_U_vec, yield_vec[which(U_vec == U_harv)])
+    spr_at_U_vec <- c(spr_at_U_vec, spr_vec[which(U_vec == U_harv)])
+    U_at_max_yield_vec <- c(U_at_max_yield_vec, U_vec[which.max(yield_vec)])
+}
+```
+
+```{r}
+tab <- rbind(
+    yield_at_U_vec, U_at_max_yield_vec, spr_at_U_vec
+)
+colnames(tab) <- minLL_vec
+rownames(tab) <- c(
+    "yield_at_U", "U_at_max_yield", "spr_at_U"
+)
+round(tab, 2)
+```
+
 
 
 
