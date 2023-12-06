@@ -22,25 +22,26 @@ head(data)
 # 1. Fit a length-weight relationship to the pooled (regardless of sex) data.
 
 ```{r}
-data$lTL <- log(data$TL)
-data$lWt <- log(data$Wt)
+length_weight <- na.omit(data[,c('TL', 'Wt')])
+length_weight$lTL <- log(length_weight$TL)
+length_weight$lWt <- log(length_weight$Wt)
 ```
 
 ```{r}
 plot(
-    data$lTL, 
-    data$lWt, 
+    length_weight$lTL, 
+    length_weight$lWt, 
     xlab="log(Length)", 
     ylab="log(Weight)", 
     main="Length-Weight Relationship"
 )
 ```
 
-## a. Report the length-weight parameters
-
 ```{r}
-(fit <- lm(lWt ~ lTL, data=data))
+(fit <- lm(lWt ~ lTL, data=length_weight))
 ```
+
+## a. Report the length-weight parameters
 
 ```{r}
 a <- exp(coef(fit)[1])
@@ -50,21 +51,21 @@ c(a, b)
 
 ## b. Plot the mean weight at age against the data
 ```{r}
-data$predWt <- a * data$TL^b
+length_weight$predWt <- a * length_weight$TL^b
 plot(
-    data$TL, 
-    data$Wt, 
-    xlab="Length", 
-    ylab="Weight", 
+    length_weight$TL, 
+    length_weight$Wt, 
+    xlab="Length (mm)", 
+    ylab="Weight (kg)", 
     main="Length-Weight Relationship"
 )
-lines(data$TL[order(data$TL)], data$predWt[order(data$TL)], col="red")
+lines(length_weight$TL[order(length_weight$TL)], length_weight$predWt[order(length_weight$TL)], col="red")
 ```
 
 # 2. Fit a series of von Bertalanffy growth models to the King Mackerel data. Determine if males and females exihibit secually dimorphic growth.
 
 ```{r}
-filtered_data <- na.omit(data)
+filtered_data <- na.omit(data[, c('Age', 'TL', 'Sex')])
 head(filtered_data)
 ```
 
@@ -218,6 +219,7 @@ lines(
     ), 
     col="blue"
 )
+legend(x=1.5, y=1300, pch=19, legend=c("Female", "Male"), col=c("orange", "blue"))
 ```
 
 ### One Parameter Shared
@@ -318,24 +320,24 @@ aic_table$delta <- aic_table$aic - min(aic_table$aic)
 (aic_table <- aic_table[order(aic_table$delta),])
 ```
 
-These are definitely sexually dimorphic growth rates. The model with all parameters free has the lowest AIC.
+These are definitely sexually dimorphic growth rates. 
 
 ## c. Which VBGF parameters differ between sexes in your top model?
 
-Given $\sigma$ and $t_0$ being shared is within 4 AIC of the fully free model I'm going to say that $L_{\infty}$ and $K$ are different between sexes. 
+The model with only $\sigma$ shared has the lowest AIC. Therefore $L_{\infty}$, $t_0$, and $K$ all differ between sexes.
 
 ## d. Report the VBGF parameter means and 95% confidence intervals from your top model
 ```{r}
 v <- c(
   6.7, 0.2, -1.5,  3.7,
-  6.9,  0.2
+  6.9,  0.2, -1.2
 ) 
 cols <- c(
-  'f_Linf', 'f_vbk', 'tknot', 'sig',
-  'm_Linf', 'm_vbk'
+  'f_Linf', 'f_vbk', 'f_tknot', 'sig',
+  'm_Linf', 'm_vbk', 'm_tknot'
 )
 (fit <- do_likelihood_fit(v, cols, 25))
-(sig_and_tknot_shared <- summarize_aic(fit, cols))
+(sig_shared <- summarize_aic(fit, cols))
 ```
 
 ```{r}
@@ -359,7 +361,7 @@ P_L95[5] <- exp(P_L95[5])
 
 ```{r}
 tab <- rbind(P_L95, P_MEAN, P_U95)
-colnames(tab) <- c('f_Linf', 'f_K', 't0', 'sigma', 'm_Linf', 'm_K')
+colnames(tab) <- c('f_Linf', 'f_K', 'f_t0', 'sigma', 'm_Linf', 'm_K', 'm_t0')
 tab
 ```
 
@@ -397,7 +399,7 @@ lines(
         male_data$Age[order(male_data$Age)], 
         exp(fit$par[5]), 
         fit$par[6], 
-        fit$par[3]
+        fit$par[7]
     ), 
     col="blue"
 )
@@ -407,6 +409,10 @@ legend(x=1.5, y=1300, pch=19, legend=c("Female", "Male"), col=c("orange", "blue"
 # 3. Fit a series of logistic maturity models to the King Mackerel data. Determine if males and females exhibit sexually dimorphic maturity.
 
 ```{r}
+filtered_data <- na.omit(data[,c('TL', 'Sex', 'Mat')])
+female_data <- filtered_data[filtered_data['Sex'] == 'F',]
+male_data <- filtered_data[filtered_data['Sex'] == 'M',]
+
 get_nll <- function(theta) {
     f_lmat50 <- theta[1]
     f_sig <- theta[2]
@@ -467,7 +473,7 @@ get_aic <- function(theta, params_to_fit) {
 }
 ```
 
-## a. Use AIC model comparison to determine if growth rates are sexually dimorphic.
+## a. Use AIC model comparison to determine if maturity is different between sexes.
 
 ```{r}
 
@@ -514,7 +520,7 @@ results
 ```
 
 ## c. Which maturity parameters differ between sexes in your top model?
-Technically the top model differs only in $\sigma$ but honestly the top three models are barely distuinguishable on the basis of AIC alone. I'm going to go, in this case, with the model with the most degrees of freedom where both $L_{mat}$ and $\sigma$ are free. That way if there are biological differences we are capturing them. 
+Technically the top model differs only in $\sigma$ but honestly the top two models are barely distuinguishable on the basis of AIC alone (I remember in class a difference of less than 5 being considered insignificant and this is much les than that). I'm going to go, in this case, with the model with the most degrees of freedom where both $L_{mat}$ and $\sigma$ are free. That way if there are biological differences we are capturing them. 
 
 ## d. Report the logistic maturity model parameter means and 95% confidence intervals from your top model.
 
@@ -581,6 +587,7 @@ aged <- na.omit(fishery_data[,c('Age', 'TL')])
 aged$cmgrp <- floor(aged$TL / 10)
 (length(aged$TL))
 (length(fishery_data$TL))
+(max(aged$Age))
 head(aged)
 ```
 
@@ -682,6 +689,9 @@ with(
 
 ## b. Estimate and report the instantaneous (Z) and finite (A) total mortality for this population. Justify the method you used to estimate Z and the data you included in the estimate.
 
+We'll use the Millar model as the random effects allowed for in the model mean we can find the mortality pattern even with variability in the underlying recruitment for each age cohort. Furthermore we're going to only look at the years
+for which the count per age has already peaked (in order to make sure we've got full recruitment to vulnerability). 
+
 ```{r}
 reshape_for_millar <- function(CAA) {
     age_at_peak <- CAA$Age[which.max(CAA$count)]
@@ -764,6 +774,13 @@ This range is itself equivalent to the value of F that we are estimated at prese
 surrogate method which we know is highly approximate in the first place. So I'd definitely don't have a lot of confidence
 in this estimate of F.
 
+## e. What specific data would you collect to obtain a potentially better estimate of Z,M,and/or F?
+
+I think we have a reasonable estimate of Z here. The real trick is being able to disentangle F and M. M can be really hard to estimate
+on its own whereas F is more or less a matter of collecting the right data. Therefore I think it would be interesting to 
+get an abundance estimate of the population in a given year along with a catch estimate in order to get a better sense of F 
+and therefore M. 
+
 # 5. Given the estimates of length-weight, growth, maturity, and mortality you estimated above (use your top models):
 
 ## a. Conduct an equilibrium Yield-per-Recruit analysis based solely on female King Mackerel.
@@ -773,9 +790,9 @@ in this estimate of F.
 A_max <- 23
 ages <- seq(1, A_max, 1)
 
-L_inf <- 1214.4
-K <- 0.226
-t_0 <- -1.93
+L_inf <- 1225.6
+K <- 0.216
+t_0 <- -2.1
 
 get_lengths <- function(ages, L_inf, K, t_0){
   return(L_inf * (1 - exp(-K * (ages - t_0))))
@@ -798,7 +815,7 @@ a <- 7.01 * 10 ^ -9
 b <- 3.01
 
 get_weights <- function(lengths, a, b){
-  return(a * lengths ^ b / 1000)
+  return(a * lengths ^ b)
 }
 
 weights <- get_weights(lengths, a, b)
@@ -815,7 +832,7 @@ plot(
 
 ### Fecundity at Weight
 ```{r}
-L_mat_50 <- 567.7
+L_mat_50 <- 571.5
 
 get_fecundity <- function(weights, L_mat_50) {
   W_mat_50 <- get_weights(L_mat_50, a, b)
@@ -959,10 +976,10 @@ plot(
 | $a_{max}$ | 23 |
 | $a$ | 7.01e-09|
 | $b$ | 3.01 | 
-| $L_{\infty}$ |  1214.4 |
-| $K$ | 0.226 |
-| $t_0$ | -1.93 |
-| $L_{mat}$ | 567.7 | 
+| $L_{\infty}$ |  1225.6 |
+| $K$ | 0.216 |
+| $t_0$ | -2.1 |
+| $L_{mat}$ | 571.5 | 
 | $M$ | -0.17|
 | $F$ | -0.302 | 
 | $U_{harv}$ | 0.26 |
@@ -1011,14 +1028,14 @@ build_table <- function(
     "length", "weight", "vul_cap", "vul_harvest", "survival_unfished",
     "survival_fished", "fecundity"
   )
-  return(round(tab, 2))
+  return(tab)
 }
 
 tab <- build_table(
   A_max, L_inf, K, t_0, a, b, L_mat_50, L_cap_50, minLL, maxLL, M, U_harv,
   U_caught, D, length_sigma
 )
-tab
+round(tab, 2)
 ```
 
 ## d. Do you believe that this King Mackerel population is undergoing either growth or recruitment overfishing?
@@ -1034,6 +1051,8 @@ get_metrics <- function(tab, U_harv) {
 
 get_metrics(tab, U_harv)
 ```
+
+Given SPR is 0.21 and the target is 0.35 we are definitely undergoing recruitment overfishing.
 
 ```{r}
 U_vec <- seq(0, 1, 0.01)
@@ -1059,6 +1078,8 @@ plot(
     ylab="Yield"
 )
 ```
+
+However it seems our yield is maximized at U = 0.27 which is just slightly higher than our U = 0.26. So growth overfishing is not occurring.
 
 ## e. What would be the minimum length limit necessary to maintain high yields and prevent growth and recruitment overfishing given the U?
 
@@ -1096,6 +1117,19 @@ rownames(tab) <- c(
 )
 round(tab, 2)
 ```
+
+In order to prevent growth and recruitment fishing we can simply filter down our data:
+
+```{r}
+t_tab <- data.frame(t(tab))
+rownames(t_tab) <- minLL_vec
+t_tab <- t_tab[t_tab$spr_at_U >= 0.35, ]
+t_tab <- t_tab[t_tab$U_at_max_yield >= 0.26, ]
+t_tab
+```
+
+Our highest yield is acheived at a slot limit of 875mm. Therefore the minimum slot limit required to maintain high yields while ensuring
+we have neither growth or recruitment overfishing is 875mm.
 
 
 
