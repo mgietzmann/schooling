@@ -1,0 +1,324 @@
+---
+title: FISH621 - Homework 1
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+setwd("/workspaces/schooling/abundance/hwk_1/")
+```
+
+# Problem 1
+
+We'll start by loading in the data. 
+
+```{r}
+small_sample = read.table("data/Length Sample 50.csv", header=T, sep=",")['x'][,1]
+large_sample = read.table("data/Length Sample 250.csv", header=T, sep=",")['x'][,1]
+N = 1000
+```
+
+
+Then create the functions we'll use to answer the question for each sample.
+
+```{r}
+variance_of_estimator = function(sample, N) {
+    n = length(sample)
+    return(
+        (N - n) / N * var(sample) / n
+    )
+}
+```
+
+```{r}
+summarize <- function(sample, N) {
+    print(paste("Sample Mean:", round(mean(sample), 2)))
+    print(paste("Sample Variance:", round(var(sample), 2)))
+    print(paste("Estimated Variance of Estimator:", round(variance_of_estimator(sample, N), 2)))
+    print(paste("Estimated CV of Estimator:", round(variance_of_estimator(sample, N) / mean(sample), 2)))
+}
+```
+
+## Small Sample
+
+```{r}
+hist(small_sample, main="Small Sample", xlab="Length", ylab="Frequency", col="lightblue")
+```
+
+```{r}
+summarize(small_sample, N)
+```
+
+## Large Sample
+
+```{r}
+hist(large_sample, main="Large Sample", xlab="Length", ylab="Frequency", col="lightblue")
+```
+
+```{r}
+summarize(large_sample, N)
+```
+
+Clearly we can see that in the larger sample while we did end up with more sample variance (due to the extremely long tail)
+the variance in our estimator is much lower. This is due to our much larger sample size. 
+
+# Problem 2
+
+In this case our data is:
+
+```{r}
+sample = c(10, 15, 1, 23, 18, 12, 19, 9, 5, 8, 3, 26, 20, 12, 31)
+hist(sample, main="Flowers per Quadrat", xlab="Number of Flowers", ylab="Frequency", col="lightblue")
+```
+
+Given this is a mountain field and 15 square meters is not a lot of area 
+we can assume that the finite population correction will be $\approx 1$. 
+We can acheive this by just setting $N$ to a very large number (compared to our 15 segments). 
+
+From the second part of the question we know that our field is $50\cdot 120=6000$ meters square. 
+So we'll just use that as our large $N$ value. 
+
+We therefore get the following statistics for the number of flowers 
+per quadrat. 
+```{r}
+N = 6000
+summarize(sample, N)
+```
+
+To get the estimates of total population is now quite simple.
+
+```{r}
+N_est = N * mean(sample)
+N_est_var = N^2 * variance_of_estimator(sample, N)
+N_est_cv = N_est_var / N_est
+print(paste("Estimated Total Population:", round(N_est, 2)))
+print(paste("Estimated Variance of Estimator:", round(N_est_var, 2)))
+print(paste("Estimated CV of Estimator:", round(N_est_cv, 2)))
+```
+
+All in all we really know nothing about the number of flowers in this field... 
+
+# Problem 3
+
+We'll start by assuming that each vole is independently distributed with an equal likelihood
+of appearing anywhere on the apartment floor. This would then mean that
+the probability of seeing on the 15% of the floor that we can see is... well...
+15%. Therefore, on average, we'd expect to see 15% of the voles. 
+
+That means that we estimate respectively:
+
+1. $12/0.15=80$
+2. $22/0.15\approx 147$
+3. $19/0.15\approx 127$
+
+voles in each of our sampling events.
+
+However we can model all of this using a binominal distribution where $p=0.15$ 
+and the number of trials is the number of voles overall $N$. Then $n$, the number
+of successes, is the number of voles we see. We can use this to estimate the likelihood
+of seeing $n$ voles given $N$ voles to get a sense of how certain our estimates are.
+
+
+```{r}
+N.possible = 12:300
+likelihood.trial1 = dbinom(12, N.possible, 0.15)
+likelihood.trial2 = dbinom(22, N.possible, 0.15)
+likelihood.trial3 = dbinom(19, N.possible, 0.15)
+
+plot(
+    N.possible, likelihood.trial1, 
+    type="l", xlab="Number of Voles", 
+    ylab="Likelihood of Seeing 12 Voles",
+    col="blue"
+)
+lines(
+    N.possible, likelihood.trial2, 
+    type="l", col="red"
+)
+lines(
+    N.possible, likelihood.trial3, 
+    type="l", col="green"
+)
+legend("topright", legend=c("Trial 1", "Trial 2", "Trial 3"), col=c("blue", "red", "green"), lty=1)
+```
+
+We can even multiply the likelihoods and see how estimates of $N$ explain our overall data.
+
+```{r}
+likelihood = likelihood.trial1 * likelihood.trial2 * likelihood.trial3
+cdf = cumsum(likelihood) / sum(likelihood)
+lower = N.possible[cdf > 0.025][1]
+upper = N.possible[cdf > 0.975][1]
+
+plot(
+    N.possible, likelihood, 
+    type="l", xlab="Number of Voles", 
+    ylab="Likelihood of Seeing 12, 22, and 19 Voles",
+    col="blue"
+)
+abline(v=lower, col="red")
+abline(v=upper, col="red")
+abline(v=sum(likelihood * N.possible) / sum(likelihood), col="green")
+
+legend("topright", legend=c("Likelihood", "95% CI", "Mean"), col=c("blue", "red", "green"), lty=1)
+print(paste("95% CI:", lower, upper))
+print(paste("Mean:", sum(likelihood * N.possible) / sum(likelihood)))
+```
+
+That's a lot of voles... 
+
+# Problem 4
+
+Given we marked 50 individuals out of 1000 our mark fraction $p_1=50/1000=0.05$
+So our expected number of marked individuals in the second sample is $m_2 = 0.05\cdot 100=5$. 
+
+However let's play around with the Hypergeometric distribution to convince ourselves of this.
+
+```{r}
+summarize = function(n1, n2, N) {
+    m2 = 0:n2
+    likelihood = dhyper(m2, n1, N-n1, n2)
+    plot(
+        m2, likelihood, 
+        type="l", xlab="m2", 
+        ylab="Likelihood of Seeing m2 Marked Individuals",
+        col="blue",
+        main=paste("n1 =", n1, "n2 =", n2, "N =", N)
+    )
+    print(paste("Mean:", sum(likelihood * m2) / sum(likelihood)))
+}
+```
+
+
+```{r}
+n1 = 50
+n2 = 100
+N = 1000
+summarize(n1, n2, N)
+```
+
+### $n2=50$ vs $n2=200$
+
+```{r}
+summarize(n1, 50, N)
+summarize(n1, 200, N)
+```
+
+### $N=500$ vs $N=2000$
+
+```{r}
+summarize(n1, n2, 500)
+summarize(n1, n2, 2000)
+```
+
+# Problem 5
+
+```{r}
+data = rbind(
+    c("May", 65, 120, 19),
+    c("June", 25, 150, 12),
+    c("July", 40, 110, 15),
+    c("August", 45, 80, 35),
+    c("September", 60, 70, 42)
+)
+colnames(data) = c("Month", "n1", "n2", "m2")
+data = as.data.frame(data)
+data$n1 = as.numeric(data$n1)
+data$n2 = as.numeric(data$n2)
+data$m2 = as.numeric(data$m2)
+data
+```
+
+### Sampling Without Replacement
+
+```{r}
+data$N.chap = (data$n1 + 1) * (data$n2 + 1) / (data$m2 + 1) - 1
+data$var.N.chap = (
+    (data$n1 + 1) * (data$n2 + 1) * (data$n1 - data$m2) * (data$n2 - data$m2) 
+    / (data$m2 + 1)^2 / (data$m2 + 2)
+)
+data$cv.N.chap = data$var.N.chap / data$N.chap
+data
+```
+
+```{r}
+N.trial = 50:800
+months = c("May", "June", "July", "August", "September")
+likelihoods = c()
+for (i in 1:nrow(data)) {
+    likelihood = dhyper(data$m2[i], data$n1[i], N.trial - data$n1[i], data$n2[i])
+    likelihoods = rbind(likelihoods, likelihood)
+}
+
+plot(
+    N.trial, likelihoods[1,], 
+    type="l", xlab="Size of Population", 
+    ylab="Likelihood",
+    col="blue"
+)
+lines(
+    N.trial, likelihoods[2,], 
+    type="l", col="red"
+)
+lines(
+    N.trial, likelihoods[3,], 
+    type="l", col="green"
+)
+lines(
+    N.trial, likelihoods[4,], 
+    type="l", col="purple"
+)
+lines(
+    N.trial, likelihoods[5,], 
+    type="l", col="orange"
+)
+legend("topright", legend=months, col=c("blue", "red", "green", "purple", "orange"), lty=1)
+```
+
+### Sampling With Replacement
+
+```{r}
+data$N.bailey = data$n1 * (data$n2 + 1) / (data$m2 + 1)
+data$var.N.bailey = (
+    data$n1 * data$n1 * (data$n2 + 1) * (data$n2 - data$m2) 
+    / (data$m2 + 1)^2 / (data$m2 + 2)
+)
+data$cv.N.bailey = data$var.N.bailey / data$N.bailey
+data
+```
+
+```{r}
+N.trial = 50:800
+months = c("May", "June", "July", "August", "September")
+likelihoods = c()
+for (i in 1:nrow(data)) {
+    likelihood = dbinom(x=data$m2[i], size=data$n2[i], prob=data$n1[i] / N.trial)
+    likelihoods = rbind(likelihoods, likelihood)
+}
+
+plot(
+    N.trial, likelihoods[1,], 
+    type="l", xlab="Size of Population", 
+    ylab="Likelihood",
+    col="blue"
+)
+lines(
+    N.trial, likelihoods[2,], 
+    type="l", col="red"
+)
+lines(
+    N.trial, likelihoods[3,], 
+    type="l", col="green"
+)
+lines(
+    N.trial, likelihoods[4,], 
+    type="l", col="purple"
+)
+lines(
+    N.trial, likelihoods[5,], 
+    type="l", col="orange"
+)
+legend("topright", legend=months, col=c("blue", "red", "green", "purple", "orange"), lty=1)
+```
+
+Couple of hours.
+
