@@ -50,6 +50,10 @@ summarize(small_sample, N)
 
 ## Large Sample
 
+I'm going to make the assumption that the first sample of 50 that we took was returned to the population
+before we ended up taking the second sample. If that is not the case one just need to replace $N=1000$ with 
+$N=950$ in the following code.
+
 ```{r}
 hist(large_sample, main="Large Sample", xlab="Length", ylab="Frequency", col="lightblue")
 ```
@@ -58,7 +62,7 @@ hist(large_sample, main="Large Sample", xlab="Length", ylab="Frequency", col="li
 summarize(large_sample, N)
 ```
 
-Clearly we can see that in the larger sample while we did end up with more sample variance (due to the extremely long tail)
+Clearly we can see that in the larger sample, while we did end up with more sample variance (due to the extremely long tail),
 the variance in our estimator is much lower. This is due to our much larger sample size. 
 
 # Problem 2
@@ -95,13 +99,13 @@ print(paste("Estimated Variance of Estimator:", round(N_est_var, 2)))
 print(paste("Estimated CV of Estimator:", round(N_est_cv, 2)))
 ```
 
-All in all we really know nothing about the number of flowers in this field... 
+All in all we really know nothing about the number of flowers in this field... We'd need to take far more samples.
 
 # Problem 3
 
 We'll start by assuming that each vole is independently distributed with an equal likelihood
 of appearing anywhere on the apartment floor. This would then mean that
-the probability of seeing on the 15% of the floor that we can see is... well...
+the probability of seeing a particular vole on the 15% of the floor that we can see is... well...
 15%. Therefore, on average, we'd expect to see 15% of the voles. 
 
 That means that we estimate respectively:
@@ -164,7 +168,10 @@ print(paste("95% CI:", lower, upper))
 print(paste("Mean:", sum(likelihood * N.possible) / sum(likelihood)))
 ```
 
-That's a lot of voles... 
+According to this we could have anywhere from 92 to 151 voles. That's a lot of voles... 
+
+However we are assuming that the voles are uniformly and independently distributed across the floor, which,
+if we knew more about voles, may not be a good assumption. 
 
 # Problem 4
 
@@ -196,19 +203,25 @@ N = 1000
 summarize(n1, n2, N)
 ```
 
-### $n2=50$ vs $n2=200$
+## Case 1: $n1=50$ vs $n1=200$
 
 ```{r}
 summarize(n1, 50, N)
 summarize(n1, 200, N)
 ```
 
-### $N=500$ vs $N=2000$
+If we decrease or increase the number of whales in the second sample we will expect to 
+see proportionally fewer or more marked whales. 
+
+## Case 2: $N=500$ vs $N=2000$
 
 ```{r}
 summarize(n1, n2, 500)
 summarize(n1, n2, 2000)
 ```
+
+If $N$ increases our $p1$ will decrease and therefore we will expect to see fewer marked whales.
+If $N$ decreases the opposite will be true. 
 
 # Problem 5
 
@@ -246,14 +259,19 @@ months = c("May", "June", "July", "August", "September")
 likelihoods = c()
 for (i in 1:nrow(data)) {
     likelihood = dhyper(data$m2[i], data$n1[i], N.trial - data$n1[i], data$n2[i])
+    likelihood[is.na(likelihood)] = 0
+    likelihood = likelihood / sum(likelihood)
     likelihoods = rbind(likelihoods, likelihood)
 }
 
+y_max = max(likelihoods) + 0.01
 plot(
     N.trial, likelihoods[1,], 
     type="l", xlab="Size of Population", 
     ylab="Likelihood",
-    col="blue"
+    col="blue",
+    main="Likelihood of Population Size without Replacement",
+    ylim=c(0, y_max)
 )
 lines(
     N.trial, likelihoods[2,], 
@@ -292,14 +310,20 @@ months = c("May", "June", "July", "August", "September")
 likelihoods = c()
 for (i in 1:nrow(data)) {
     likelihood = dbinom(x=data$m2[i], size=data$n2[i], prob=data$n1[i] / N.trial)
+    likelihood[is.na(likelihood)] = 0
+    likelihood = likelihood / sum(likelihood)
     likelihoods = rbind(likelihoods, likelihood)
 }
+
+y_max = max(likelihoods) + 0.01
 
 plot(
     N.trial, likelihoods[1,], 
     type="l", xlab="Size of Population", 
     ylab="Likelihood",
-    col="blue"
+    col="blue",
+    main="Likelihood of Population Size with Replacement",
+    ylim=c(0, y_max)
 )
 lines(
     N.trial, likelihoods[2,], 
@@ -320,5 +344,25 @@ lines(
 legend("topright", legend=months, col=c("blue", "red", "green", "purple", "orange"), lty=1)
 ```
 
-Couple of hours.
+Assuming this is a simple mark recapture experiment then there is clearly a loss in fish over time, specifically
+between the first three months and the last two. This inference is coming from the fact that our marked fraction
+in the second sample is a much higher proportion in the last two months. 
+
+However, there is a key problem here. We are assuming that tags are unique to the month which means that all tags
+would need to be lost or all tagged fish would need to die each month. This is probably unlikely (although I admit
+I don't know a lot about tag loss rates). What this means is that it is more likely that the fish we are catching
+at each time point have tags from earlier time steps. 
+
+That being said in this problem it's stated that I am marking all the fish I catch each time which seems to
+imply that in this scenario we are assuming tags are lost each month. That however brings in the question of how 
+many tags I'd lose in the time between sample one and sample two. 
+
+Also simple mark recapture assumes there's no ingress or egress. Given we're looking at a stream that 
+connects to a lake this is probably not a terribly good assumption either.
+
+All in all then I think there's a reasonable bit of uncertainty in the validity of these results. 
+
+# Time Allocation
+
+I spent around 3 hours on this assignment. 
 
