@@ -1,0 +1,221 @@
+---
+title: FISH621 - Homework 2
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+setwd("/workspaces/schooling/abundance/hwk_2/")
+```
+
+# Problem 1
+
+The following is our captures per field by the first observer $n_1$ 
+and the second observer $n_2$. 
+
+```{r}
+n1 = c(100, 200, 200, 50, 10)
+n2 = c(90, 90, 50, 15, 8)
+```
+
+We will now estimate $\hat{N}$, $\hat{N_2}$, $\hat{p}$ and the confidence 
+intervals for $\hat{N}$ and $\hat{p}$.
+
+```{r}
+N.est = n1 ^ 2 / (n1 - n2)
+N.est
+```
+
+```{r}
+N2.est = N.est - n1
+N2.est
+```
+
+```{r}
+p.est = (n1 - n2) / n1
+p.est
+```
+
+```{r}
+CONF = 0.95
+S = 2
+q.est = (1 - p.est)
+N.est.var = (
+    (N.est * (1 - q.est ^ S) * q.est ^ S)
+    /
+    ((1 - q.est ^ S) ^ 2 - (p.est * S) ^ 2 * q.est ^ (S - 1))
+)
+N.est.std = sqrt(N.est.var)
+N.est.lower = N.est - qnorm(0.5 + CONF / 2) * N.est.std
+N.est.upper = N.est + qnorm(0.5 + CONF / 2) * N.est.std
+
+(N.est.lower)
+(N.est.upper)
+```
+
+```{r}
+p.est.var = (
+    ((1 - q.est ^ S) * (q.est * p.est) ^ 2)
+    /
+    (N.est * (q.est * (1 - q.est ^ S) ^ 2 - (p.est * S) ^ 2 * q.est ^ S))
+)
+p.est.std = sqrt(p.est.var)
+p.est.lower = p.est - qnorm(0.5 + CONF / 2) * p.est.std
+p.est.upper = p.est + qnorm(0.5 + CONF / 2) * p.est.std
+
+(p.est.lower)
+(p.est.upper)
+```
+
+In order for this to work we want to make sure the removal probability each round
+is as close to equal as possible and that the area searched is precisely the same.
+We also require that there is no change the population besides our removals between 
+each go. 
+
+To do this it would make sense to send the same person out twice, have them 
+expend exactly the same amount of effort, and do it within a short interval so 
+as to ensure there are few migrations, deaths, etc.
+
+```{r}
+set.seed(42)
+simulations = 10000
+N.est.bootstrap = matrix(data=NA, nrow=length(N.est), ncol=simulations)
+for (i in 1:length(N.est)) {
+    N = round(N.est[i])
+    p = p.est[i]
+    n1.bootstrap = rbinom(simulations, N, p)
+    n2.bootstrap = rbinom(simulations, N - n1.bootstrap, p)
+    N.est.bootstrap[i,] = n1.bootstrap ^ 2 / (n1.bootstrap - n2.bootstrap)
+}
+par(mfrow=c(3,2), mar=c(2,2,4,1))
+for (i in 1:length(N.est)) {
+    hist(N.est.bootstrap[i,], main=paste('Field', i))
+    abline(v=N.est[i], col=rgb(1, 0, 0, 0.5), lwd=3)
+    abline(v=N.est.lower[i], col=rgb(0, 1, 0, 0.5), lwd=3)
+    abline(v=N.est.upper[i], col=rgb(0, 1, 0, 0.5), lwd=3)
+    abline(v=quantile(N.est.bootstrap[i,], 0.975), col=rgb(0, 0, 1, 0.5), lwd=3)
+    abline(v=quantile(N.est.bootstrap[i,], 0.025), col=rgb(0, 0, 1, 0.5), lwd=3)
+
+    if (i == 4) {
+        legend("topright", legend=c("Point Estimate", "Normal Confidence Interval", "Bootstrap Confidence Interval"), col=c("red", "green", "blue"), lty=1)
+    }
+}
+```
+
+In general we can see that for the fields where the detection probability
+is high enough to make for meaningful estimates of variance
+that the boostrapping is showing a non-symmetric bias exists
+in our estimates that is not present in our normal estimate. 
+
+# Problem 2
+
+First let's read in our data.
+
+```{r}
+data = read.table("data/Pike.csv", header=T, sep=",")
+head(data$Pond)
+```
+
+```{r}
+pond_estimate = function(pond.name) {
+    pond = data[data$Pond == pond.name,]
+    pond = pond[order(pond$Day),]
+    pond$CPUE = pond$Catch / pond$Hours.Fished
+    pond$Catch.Cumulative = cumsum(pond$Catch) - pond$Catch
+
+    lm <- lm(pond$CPUE ~ pond$Catch.Cumulative)
+    print(summary(lm))
+
+    intercept = coef(lm)[1]
+    q = - coef(lm)[2]
+    pond$CPUE.pred = intercept - q * pond$Catch.Cumulative
+
+    print(paste('q', q))
+    print(paste('N', round(intercept / q)))
+
+    plot(
+        x=pond$Catch.Cumulative,
+        y=pond$CPUE,
+        ylab='CPUE',
+        xlab='Cumulative Catch',
+        main=paste('Pond', pond.name)
+    )
+    lines(
+        x=pond$Catch.Cumulative,
+        y=pond$CPUE.pred
+    )
+}
+```
+
+## Pond A
+
+```{r}
+pond.name = 'A'
+pond_estimate(pond.name)
+```
+
+## Pond B
+
+```{r}
+pond.name = 'B'
+pond_estimate(pond.name)
+```
+
+## Notes
+
+$q$ here is the catchability coefficient. It tells us how catch per unit effort
+changes as a function of biomass. This is where the major assumption here comes in.
+We are implying with our model that the relationship between catchability (CPUE)
+and biomass is linear. We are also assuming that there is no other changes to the 
+population besides our own removal, otherwise our cumulative catch would be 
+incorrect. 
+
+# Problem 3
+
+First we have the following data:
+
+```{r}
+data = data.frame(
+    R.M=c(271, 51, 330, 210, 74),
+    row.names = c('Sep', 'Oct', 'Nov', 'Dec', 'Jan')
+)
+
+data$R.F = c(15, 180, 140, 149, 18)
+data$P1.M = c(27, 24, 26, 22, 19) / 50
+data$P2.M = c(24, 26, 22, 19, 17) / 50
+data$P1.F = 1 - data$P1.M
+data$P2.F = 1 - data$P2.M
+data$R = data$R.F + data$R.M
+
+head(data)
+```
+
+Let's go ahead and create our estimates.
+
+```{r}
+data$N1 = (data$R.M - data$R * data$P2.M) / (data$P1.M - data$P2.M)
+data$N2 = data$N1 - data$R
+data$N1.M = data$N1 * data$P1.M
+data$N1.F = data$N1 * data$P1.F
+data$N2.M = data$N1.M - data$R.M
+data$N2.F = data$N1.F - data$R.F
+head(data)
+```
+
+And given there were no removals, we'd expect February to have the same as
+January's $N_2$.
+
+The assumptions at play here are:
+
+1. We know every single removal.
+2. The probabilities of capture are constant (and equivalent to our survey probabilities) (likewise our surveys had better be independent)
+3. The population is closed. 
+
+# Time Allocation
+
+Around 2-3 hours. 
+
+
+
+
+
+
