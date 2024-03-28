@@ -1,0 +1,210 @@
+---
+title: FISH621 - Homework 3
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+setwd("/workspaces/schooling/abundance/hwk_3/")
+```
+
+# Problem 1
+
+
+```{r}
+data = read.table("data/Schnabel Data.csv", header=T, sep=",")
+head(data)
+```
+
+#### 1. Calculate the number of fish marked in each sampling period $u_i$
+
+```{r}
+data$u = data$Captures - data$Recaptures
+data$u
+```
+
+#### 2. Calculate the total number of marked fish in the population at the start of each sampling period ($M_i$)
+
+```{r}
+data$M = cumsum(data$u) - data$u
+data$M
+```
+
+#### 3. Determine the total number of trout in the lake using the basic Schnabel estimator.
+
+```{r}
+N.schnabel = sum(data$Captures * data$M)/sum(data$Recaptures)
+N.schnabel
+```
+
+
+#### 4. Determine the total number of trout in the lake using the Chapman extension to the Schnabel estimator.
+
+```{r}
+N.chapman = sum(data$Captures * data$M)/(sum(data$Recaptures) + 1)
+N.chapman
+```
+
+#### 5. Using the Chapman extension to the Schnabel estimator, please calculate an approximate 95% confidence interval for this estimate
+
+```{r}
+lambda = sum(data$Captures * data$M)
+m = sum(data$Recaptures)
+
+alpha = 0.05
+z = qnorm(1-alpha/2)
+
+upper = (
+    lambda * (
+        (2 * m + z ^ 2 + z * sqrt(4 * m + z ^ 2))
+        / (2 * (m ^ 2))
+    )
+)
+lower =  (
+    lambda * (
+        (2 * m + z ^ 2 - z * sqrt(4 * m + z ^ 2))
+        / (2 * (m ^ 2))
+    )
+)
+c(lower, upper)
+```
+
+#### 6. Calculate separate Chapman abundance estimates for each sampling period: 2: s.
+
+```{r}
+n = length(data$Captures)
+data$N.chapman[2:n] = (data$M[2:n] + 1) * (data$Captures[2:n] + 1) / (data$Recaptures[2:n] + 1) - 1
+data$N.chapman
+```
+
+#### 7. Calculate the variance estimate for each of the Chapman abundance estimates for sampling periods: 2:s.
+
+```{r}
+data$var.chapman = (
+    (
+        (data$M + 1) * (data$Captures + 1) 
+        * (data$M - data$Recaptures) * (data$Captures - data$Recaptures)
+    ) / (
+        (data$Recaptures + 1) ^ 2 * (data$Recaptures + 2)
+    )
+)
+data$var.chapman
+```
+
+#### 8. Find the mean Chapman estimator for total trout abundance from this experiment
+
+```{r}
+N.chapman.mean = mean(data$N.chapman[2:n])
+N.chapman.mean
+```
+
+#### 9. Calculate the theoretical variance for the mean Chapman estimator, and approximate 95% confidence interval for this estimate.
+
+```{r}
+var.chapman.mean = sum(data$var.chapman[2:n]) / (n - 1)^2
+var.chapman.mean
+```
+
+```{r}
+z = qnorm(1-alpha/2)
+lower = N.chapman.mean - z * sqrt(var.chapman.mean)
+upper = N.chapman.mean + z * sqrt(var.chapman.mean)
+c(lower, upper)
+```
+
+#### 10. Calculate the empirical variance for the mean Chapman estimator, and approximate 95% confidence interval for this estimate.
+
+```{r}
+var.chapman.mean.emp = sum((data$N.chapman[2:n] - N.chapman.mean)^2) / (n - 1) / (n - 2)
+var.chapman.mean.emp
+```
+
+```{r}
+z = qnorm(1-alpha/2)
+lower = N.chapman.mean - z * sqrt(var.chapman.mean.emp)
+upper = N.chapman.mean + z * sqrt(var.chapman.mean.emp)
+c(lower, upper)
+```
+
+#### 11. Include a table describing $n_i$ , $m_i$ , $u_i$ , $M_i$ , Chapman estimates, and the coefficient of variation for Chapman estimates, across sampling periods 1:s.
+
+```{r}
+data$n = data$Captures
+data$m = data$Recaptures
+data$cv = sqrt(data$var.chapman) / data$N.chapman
+data[, c("n", "m", "u", "M", "N.chapman", "cv")]
+```
+
+# Problem 2
+
+#### 1. An estimate of total wolf abundance within each stratum: $\tau_h$.
+
+```{r}
+stratum = 1:3
+n = c(50, 50, 50)
+y = c(10, 20, 30)
+var = c(2800, 700, 600)
+size = c(100, 50, 300)
+data = data.frame(stratum, n, y, var, size)
+data
+```
+
+```{r}
+data$tau = y * size 
+data$tau
+```
+
+#### 2. The estimated wolf population total in the entire 450-km2 region: $\tau_{st}$
+
+```{r}
+total_pop = sum(data$tau)
+total_pop
+```
+
+#### 3. An unbiased estimate of the variance of the wolf population total: $var({t_{st}})$
+
+```{r}
+total_pop.var = sum(data$size * (data$size - data$n) * data$var / data$n)
+total_pop.var
+```
+
+#### 4. The coefficient of variation for the estimate of the wolf population total.
+
+```{r}
+sqrt(total_pop.var) / total_pop
+```
+
+#### 5. An approximate 95% confidence interval for the population total.
+
+```{r}
+z = qnorm(1-alpha/2)
+lower = total_pop - z * sqrt(total_pop.var)
+upper = total_pop + z * sqrt(total_pop.var)
+c(lower, upper)
+```
+
+#### 6. An unbiased estimate of mean wolf abundance per 1-km2 for the entire population: $\mu_{st}$
+
+```{r}
+mu = total_pop / sum(data$size)
+mu 
+```
+
+#### 7. An unbiased estimate of the variance of the mean wolf abundance per 1-km2
+
+```{r}
+var.mu = sum(
+    (data$size / sum(data$size))^2 * (data$size - data$n) / (data$size) * data$var / data$n
+)
+var.mu
+```
+
+#### 8. An approximate 95% confidence interval for the mean wolf abundance per 1-km2 
+
+```{r}
+z = qnorm(1-alpha/2)
+lower = mu - z * sqrt(var.mu)
+upper = mu + z * sqrt(var.mu)
+c(lower, upper)
+```
+
+# Problem 3
