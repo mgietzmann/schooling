@@ -1,0 +1,250 @@
+---
+title: FISH621 - Homework 4
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+library(Distance)
+library(dplyr)
+```
+
+# Problem 1
+
+```
+data = read.csv("wren.csv")
+head(data)
+```
+
+### 1. Plot a histogram of detection distances.
+
+```
+hist(
+    data$distance, 
+    main="Histogram of Detection Distances", 
+    xlab="Distance (m)", 
+    ylab="Frequency", 
+)
+```
+
+### 2. Use boxplots to visualize detection distances by transect.
+
+```
+boxplot(
+    distance ~ Sample.Label, 
+    data=data, 
+    main="Detection Distances by Transect", 
+    xlab="Transect", 
+    ylab="Distance (m)"
+)
+```
+
+### 3. Create a bar or column plot showing the total number of wren detections by transect number.
+
+```
+barplot(
+    table(data$Sample.Label), 
+    main="Total Number of Wren Detections by Transect", 
+    xlab="Transect", 
+    ylab="Number of Detections"
+)
+```
+
+
+### 4. Fit three alternative models to estimate abundance and density from these distance sampling data.
+
+#### a. Half-normal
+
+```
+wren.hn = ds(data, key="hn", adjustment=NULL, convert_units=0.001)
+```
+
+#### b. Hazard-rate
+
+```
+wren.hr = ds(data, key="hr", adjustment=NULL, convert_units=0.001)
+```
+
+#### c. Uniform with a cosine adjustment
+
+```
+wren.cos = ds(data, key="unif", adjustment="cos", convert_units=0.001)
+```
+
+### 5. Plot a comparison of the fitted detection functions to the distance data.
+
+```
+par(mfrow = c(1, 3))
+plot(wren.hn, main="Half-Normal")
+plot(wren.hr, main="Hazard-Rate")
+plot(wren.cos, main="Uniform w/ Cosine Adjustment")
+```
+
+```
+par(mfrow = c(1, 3))
+gof_ds(wren.hn, main="Half-Normal")
+gof_ds(wren.hr, main="Hazard-Rate")
+gof_ds(wren.cos, main="Uniform w/ Cosine Adjustment")
+```
+
+### 6. Create a summary table comparing density estimates, CV's and lower/upper confidence intervals, across the three alternative models.
+
+
+```
+summary = rbind(
+    wren.hn$dht$individuals$D,
+    wren.hr$dht$individuals$D,
+    wren.cos$dht$individuals$D
+)
+summary$model = c("Half-Normal", "Hazard-Rate", "Uniform w/ Cosine Adjustment")
+summary
+```
+
+```
+sum((data %>% 
+    group_by(Sample.Label) %>% 
+    summarise(Effort = mean(Effort)))$Effort)
+```
+
+### 7. Create a figure showing the density estimates from the three models and associated uncertainty.
+
+### 8. Create a summary table comparing abundance estimates for the entire estate, CV's and lower/upper confidence intervals, across the three alternative models.
+
+### 9. Create a figure showing the abundance estimates from the three models and associated uncertainty.
+
+### 10.  Please identify which model you believe most reliable and provide your justification for this choice.
+
+
+# Problem 2
+
+```{r}
+data = read.csv("ducks-area-effort.csv")
+head(data)
+```
+
+### 1. Estimate density and abundance for duck nests using distance methods and a half-normal detection (sighting) function.
+
+```{r}
+duck.hn = ds(data, key="hn", adjustment=NULL, convert_units=0.001)
+duck.hn$dht$individuals$N
+```
+
+
+### 2. Calculate the area sampled by each strip transect ($a$), in km2, if you were to treat each line transect as a strip transect and use nest sightings out to 1.25 meters on each side of the transect.
+
+```{r}
+grouped = data[data$distance <= 1.25,] %>% group_by(Sample.Label) %>% summarise(Effort = mean(Effort), S = n())
+grouped$Area = 2 * 1.25 / 1000 * grouped$Effort
+head(grouped)
+```
+
+### 3. Estimate density and abundance, if you treat each line transect as a strip transect and use nest sightings out to 1.25 meters on each side of the transect.
+
+I'm assuming the desire here is for overall density as if we have one long transect.
+
+```{r}
+density = sum(grouped$S) / sum(grouped$Area)
+density
+```
+
+```{r}
+regions = data %>% group_by(Region.Label) %>% summarise(Area = mean(Area))
+regions
+```
+
+```{r}
+(abundance = density * sum(regions$Area))
+```
+
+### 4. If $n$ = 20 is the total number of transects sampled, given the area sampled by each transect $a$, calculate the effective number of transects that could be sampled $N$.
+
+```{r}
+(N_transects = sum(regions$Area) / mean(grouped$Area))
+```
+
+### 5. Assuming the strip transects are randomly placed, please use simple random sampling theory to calculate an estimate of the variance and the coefficient of variation (CV) for the total abundance estimate.
+
+```{r}
+n = 20
+S_bar.mean = mean(grouped$S)
+S_bar.var = (N_transects-n)/N_transects * var(grouped$S)/n
+N_bar = N_transects * S_bar.mean
+N_bar.var = N_transects^2 * S_bar.var
+N_bar.se = sqrt(N_bar.var)
+N_bar.cv = N_bar.se / N_bar
+D_bar = N_bar / sum(regions$Area)
+c(N_bar, N_bar.var, N_bar.se, N_bar.cv, D_bar)
+```
+
+```{r}
+duck.strip1.N = round(N_bar, 2)
+duck.strip1.N.var = round(N_bar.var, 2)
+duck.strip1.N.se = round(N_bar.se, 2)
+duck.strip1.N.cv = round(N_bar.cv, 3)
+duck.strip1.D = round(D_bar, 2)
+```
+
+### 6. Next, please repeat this process, if we only considered nest sightings out to 1.0 meters on each side of the transects.
+
+```{r}
+grouped = data[data$distance <= 1,] %>% group_by(Sample.Label) %>% summarise(Effort = mean(Effort), S = n())
+grouped$Area = 2 * 1 / 1000 * grouped$Effort
+(N_transects = sum(regions$Area) / mean(grouped$Area))
+S_bar.mean = mean(grouped$S)
+S_bar.var = (N_transects-n)/N_transects * var(grouped$S)/n
+N_bar = N_transects * S_bar.mean
+N_bar.var = N_transects^2 * S_bar.var
+N_bar.se = sqrt(N_bar.var)
+N_bar.cv = N_bar.se / N_bar
+D_bar = N_bar / sum(regions$Area)
+c(N_bar, N_bar.var, N_bar.se, N_bar.cv, D_bar)
+```
+
+```{r}
+duck.strip2.N = round(N_bar, 2)
+duck.strip2.N.var = round(N_bar.var, 2)
+duck.strip2.N.se = round(N_bar.se, 2)
+duck.strip2.N.cv = round(N_bar.cv, 3)
+duck.strip2.D = round(D_bar, 2)
+```
+
+### 7. Please create a table (and report this in your word document) summarizing your estimates of: (a) density $D$, (b) total abundance $N$, standard error or standard deviation in $N$, and the CV of $N$, based on distance methods and the two strip transect approximations.
+
+```{r}
+table = rbind(
+    c("distance", round(duck.hn$dht$individuals$D$Estimate, 2), round(duck.hn$dht$individuals$N$Estimate, 2), round(duck.hn$dht$individuals$N$se, 2), round(duck.hn$dht$individuals$N$cv, 3)),
+    c("1.25m", duck.strip1.D, duck.strip1.N, duck.strip1.N.se, duck.strip1.N.cv),
+    c("1.0m", duck.strip2.D, duck.strip2.N, duck.strip2.N.se, duck.strip2.N.cv)
+)
+colnames(table) = c("Method", "Density", "Abundance", "SE", "CV")
+table
+```
+
+
+
+### 8. Please describe in the word document you submit, why treating our line transect data as strip transects and applying estimators under simple random sampling may or may not be appropriate.
+
+# Problem 3
+
+### 1. Calculate catch per unit effort (CPUE) for both meat and round weights.
+
+### 2. Plot the timeseries (i.e. across seasons) of CPUE by region for both meat and round weights.
+
+### 3. Use a GLM to calculate a model-based index of abundance for scallops based on meat weight, not controlling for region.
+
+### 4. Use a GLM to calculate a model-based index of abundance for scallops based on meat weight, this time controlling for region. Use the Shelikof region as your reference region when generating the index.
+
+### 5. Plot a comparison of the meat weight indices from models with and without a region effect.
+
+### 6. Use a GLM to calculate a model-based index of abundance for scallops based on round weight, not controlling for region.
+
+### 7. Use a GLM to calculate a model-based index of abundance for scallops based on round weight, this time controlling for region. Use the Shelikof region as your reference region when generating the index.
+
+### 8. Plot a comparison of the round weight indices from models with and without a region effect.
+
+### 9. Please plot a comparison of fishery-dependent indices of abundance for scallops based on round and meat weights, using models that include the region effect. Summarize the differences you observe.
+
+# Questions:
+
+1. What's going on with the transects in problem (1) there is definitely overlap going on... 
+
+
