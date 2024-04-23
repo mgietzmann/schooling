@@ -6,18 +6,19 @@ author: Marcel Gietzmann-Sanders
 ```{r}
 library(Distance)
 library(dplyr)
+library(ggplot2)
 ```
 
 # Problem 1
 
-```
+```{r}
 data = read.csv("wren.csv")
 head(data)
 ```
 
 ### 1. Plot a histogram of detection distances.
 
-```
+```{r}
 hist(
     data$distance, 
     main="Histogram of Detection Distances", 
@@ -28,7 +29,7 @@ hist(
 
 ### 2. Use boxplots to visualize detection distances by transect.
 
-```
+```{r}
 boxplot(
     distance ~ Sample.Label, 
     data=data, 
@@ -40,7 +41,7 @@ boxplot(
 
 ### 3. Create a bar or column plot showing the total number of wren detections by transect number.
 
-```
+```{r}
 barplot(
     table(data$Sample.Label), 
     main="Total Number of Wren Detections by Transect", 
@@ -54,32 +55,32 @@ barplot(
 
 #### a. Half-normal
 
-```
+```{r}
 wren.hn = ds(data, key="hn", adjustment=NULL, convert_units=0.001)
 ```
 
 #### b. Hazard-rate
 
-```
+```{r}
 wren.hr = ds(data, key="hr", adjustment=NULL, convert_units=0.001)
 ```
 
 #### c. Uniform with a cosine adjustment
 
-```
+```{r}
 wren.cos = ds(data, key="unif", adjustment="cos", convert_units=0.001)
 ```
 
 ### 5. Plot a comparison of the fitted detection functions to the distance data.
 
-```
+```{r}
 par(mfrow = c(1, 3))
 plot(wren.hn, main="Half-Normal")
 plot(wren.hr, main="Hazard-Rate")
 plot(wren.cos, main="Uniform w/ Cosine Adjustment")
 ```
 
-```
+```{r}
 par(mfrow = c(1, 3))
 gof_ds(wren.hn, main="Half-Normal")
 gof_ds(wren.hr, main="Hazard-Rate")
@@ -89,27 +90,41 @@ gof_ds(wren.cos, main="Uniform w/ Cosine Adjustment")
 ### 6. Create a summary table comparing density estimates, CV's and lower/upper confidence intervals, across the three alternative models.
 
 
-```
+```{r}
 summary = rbind(
-    wren.hn$dht$individuals$D,
-    wren.hr$dht$individuals$D,
-    wren.cos$dht$individuals$D
+    wren.hn$dht$individuals$D[,c("Estimate", "se", "cv", "lcl", "ucl")],
+    wren.hr$dht$individuals$D[,c("Estimate", "se", "cv", "lcl", "ucl")],
+    wren.cos$dht$individuals$D[,c("Estimate", "se", "cv", "lcl", "ucl")]
 )
 summary$model = c("Half-Normal", "Hazard-Rate", "Uniform w/ Cosine Adjustment")
 summary
 ```
 
-```
-sum((data %>% 
-    group_by(Sample.Label) %>% 
-    summarise(Effort = mean(Effort)))$Effort)
-```
-
 ### 7. Create a figure showing the density estimates from the three models and associated uncertainty.
+
+```{r}
+ggplot(summary, aes(model, Estimate)) + geom_point() +  
+geom_errorbar(aes(ymin = lcl, ymax = ucl))
+```
 
 ### 8. Create a summary table comparing abundance estimates for the entire estate, CV's and lower/upper confidence intervals, across the three alternative models.
 
+```{r}
+summary = rbind(
+    wren.hn$dht$individuals$N[,c("Estimate", "se", "cv", "lcl", "ucl")],
+    wren.hr$dht$individuals$N[,c("Estimate", "se", "cv", "lcl", "ucl")],
+    wren.cos$dht$individuals$N[,c("Estimate", "se", "cv", "lcl", "ucl")]
+)
+summary$model = c("Half-Normal", "Hazard-Rate", "Uniform w/ Cosine Adjustment")
+summary
+```
+
 ### 9. Create a figure showing the abundance estimates from the three models and associated uncertainty.
+
+```{r}
+ggplot(summary, aes(model, Estimate)) + geom_point() +  
+geom_errorbar(aes(ymin = lcl, ymax = ucl))
+```
 
 ### 10.  Please identify which model you believe most reliable and provide your justification for this choice.
 
@@ -225,23 +240,131 @@ table
 
 # Problem 3
 
+```{r}
+data = read.csv("Scallop CPUE.csv")
+head(data)
+```
+
 ### 1. Calculate catch per unit effort (CPUE) for both meat and round weights.
+
+```{r}
+data$CPUE_Meat = data$Catch_Meat / data$Dredge_Hours
+data$CPUE_Round = data$Catch_Round / data$Dredge_Hours
+head(data)
+```
 
 ### 2. Plot the timeseries (i.e. across seasons) of CPUE by region for both meat and round weights.
 
+```{r}
+ggplot(data, aes(x=Season, y=CPUE_Meat, color=Region)) + 
+    geom_point() + geom_line(size = 1)
+
+```
+
+```{r}
+ggplot(data, aes(x=Season, y=CPUE_Round, color=Region)) + 
+    geom_point() + geom_line(size = 1)
+
+```
+
 ### 3. Use a GLM to calculate a model-based index of abundance for scallops based on meat weight, not controlling for region.
+
+```{r}
+data$fSeason = factor(data$Season)
+data$fRegion = factor(data$Region)
+indices = data[data$Region == "Shelikof", c("fSeason", "fRegion", "Season")] %>% distinct(fSeason, Season, fRegion)
+```
+
+```{r}
+model.s = glm(log(CPUE_Meat + 1) ~ fSeason, data=data)
+indices$meat_season = exp(predict(model.s, newdata=indices, type="response")) - 1
+# normalize this index
+indices$meat_season = (indices$meat_season - min(indices$meat_season)) / (max(indices$meat_season) - min(indices$meat_season))
+```
 
 ### 4. Use a GLM to calculate a model-based index of abundance for scallops based on meat weight, this time controlling for region. Use the Shelikof region as your reference region when generating the index.
 
+```{r}
+model.sr = glm(log(CPUE_Meat + 1) ~ fSeason + fRegion, data=data) 
+indices$meat_season_region = exp(predict(model.sr, newdata=indices, type="response")) - 1
+indices$meat_season_region = (indices$meat_season_region - min(indices$meat_season_region)) / (max(indices$meat_season_region) - min(indices$meat_season_region))
+```
+
 ### 5. Plot a comparison of the meat weight indices from models with and without a region effect.
+
+```{r}
+plot.default(
+    indices$Season, 
+    indices$meat_season, 
+    type="l",
+    col="red", 
+    xlab="Season", 
+    ylab="CPUE (Meat)", 
+    main="Comparison of Meat Weight Indices"
+)
+lines(
+    indices$Season, 
+    indices$meat_season_region, 
+    col="blue"
+)
+legend("bottomleft", legend=c("Season Only", "Season and Region"), col=c("red", "blue"), lty=1:1)
+```
 
 ### 6. Use a GLM to calculate a model-based index of abundance for scallops based on round weight, not controlling for region.
 
+```{r}
+model.s_r = glm(log(CPUE_Round + 1) ~ fSeason, data=data)
+indices$round_season = exp(predict(model.s_r, newdata=indices, type="response")) - 1
+indices$round_season = (indices$round_season - min(indices$round_season)) / (max(indices$round_season) - min(indices$round_season))
+```
+
 ### 7. Use a GLM to calculate a model-based index of abundance for scallops based on round weight, this time controlling for region. Use the Shelikof region as your reference region when generating the index.
+
+```{r}
+model.sr_r = glm(log(CPUE_Round + 1) ~ fSeason + fRegion, data=data) 
+indices$round_season_region = exp(predict(model.sr_r, newdata=indices, type="response")) - 1
+indices$round_season_region = (indices$round_season_region - min(indices$round_season_region)) / (max(indices$round_season_region) - min(indices$round_season_region))
+```
 
 ### 8. Plot a comparison of the round weight indices from models with and without a region effect.
 
+```{r}
+plot.default(
+    indices$Season, 
+    indices$round_season, 
+    type="l",
+    col="red", 
+    xlab="Season", 
+    ylab="CPUE (Round)", 
+    main="Comparison of Round Weight Indices"
+)
+lines(
+    indices$Season, 
+    indices$round_season_region, 
+    col="blue"
+)
+legend("bottomleft", legend=c("Season Only", "Season and Region"), col=c("red", "blue"), lty=1:1)
+```
+
 ### 9. Please plot a comparison of fishery-dependent indices of abundance for scallops based on round and meat weights, using models that include the region effect. Summarize the differences you observe.
+
+```{r}
+plot.default(
+    indices$Season, 
+    indices$meat_season_region, 
+    type="l",
+    col="red", 
+    xlab="Season", 
+    ylab="CPUE (Round)", 
+    main="Comparison of Weight Indices"
+)
+lines(
+    indices$Season, 
+    indices$round_season_region, 
+    col="blue"
+)
+legend("bottomleft", legend=c("Meat", "Round"), col=c("red", "blue"), lty=1:1)
+```
 
 # Questions:
 
