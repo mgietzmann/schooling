@@ -128,6 +128,11 @@ geom_errorbar(aes(ymin = lcl, ymax = ucl))
 
 ### 10.  Please identify which model you believe most reliable and provide your justification for this choice.
 
+I'd go with the hazard rate model for a couple of reasons.
+
+1. It has the best AIC score of the three models.
+2. Much like the duck nest data it seems like we have a pretty steady detection probability for a while before the drop off and the hazard rate model does a good job of capturing that. 
+3. The deviation in the QQ plot gives me some hesitation but its in the same all the models have trouble.
 
 # Problem 2
 
@@ -237,6 +242,13 @@ table
 
 
 ### 8. Please describe in the word document you submit, why treating our line transect data as strip transects and applying estimators under simple random sampling may or may not be appropriate.
+
+As is clear from comparing the 1m strip to the 1.25m strip, by removing the observations beyond our strip width we effectively "lose" effort and therefore increase
+the variance in our estimate somewhat needlessly. So by extending the allowable distance we end up with more stable estimates due to an increase in "effort". 
+However if we don't account for the decrease in observation probability as the distance increases we'll end up underestimating our total abundance as we'll have 
+effectively sampled far fewer individuals that we would have expected. 
+
+Distance sampling allows us to increase our effort without invalidating a basic assumption required for strip transects and simple random sampling. 
 
 # Problem 3
 
@@ -366,8 +378,11 @@ lines(
 legend("bottomleft", legend=c("Meat", "Round"), col=c("red", "blue"), lty=1:1)
 ```
 
-# Questions:
+- It's interesting to note that there seems to be a kind of delay betwen the meat and round with the meat usually responding first. I wonder if this indicates some kind of selectivity on the fisher's part.
+- One thing apparent from the plots above is that controlling for region for meat doesn't make a huge difference whereas there definitely is a difference in round weight. Very curious as to why this is. 
+- Also interesting to note that generally the meat index remains at a higher level overall except for that one exceptional dip somewhere around 2008. 
 
-1. What's going on with the transects in problem (1) there is definitely overlap going on... 
+# Time Allocation
 
+Probably ~4 hours. That first problem really threw me for a loop :) 
 
