@@ -1,0 +1,335 @@
+---
+title: FISH621 - Exam
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+library(tidyverse)
+```
+
+# Problem 1: Blackfish
+
+```{r}
+data = read.csv("Twill Pond Blackfish.csv")
+head(data)
+```
+
+### 1. Calculate a representative index of sampling effort for each day.
+
+We'll go with total trap hours as our unit of effort.
+
+```{r}
+data$trap_hours = data$Traps * data$Hours.Fished
+head(data)
+```
+
+### 2. Use a depletion estimator to determine the catchability of blackfish in Twill Pond.
+
+```{r}
+data$cumulative_catch = cumsum(data$Catch) - data$Catch
+data$CPUE = data$Catch / data$trap_hours
+head(data)
+```
+
+```{r}
+model = lm(data$CPUE ~ data$cumulative_catch)
+```
+
+```{r}
+plot(data$CPUE ~ data$cumulative_catch)
+points(data$cumulative_catch, predict(model), col="red")
+legend("topright", legend=c("Observed", "Fit"), col=c("black", "red"), pch=1)
+```
+
+
+Given we are fitting:
+
+$$CPUE = qN_0 - qK$$
+
+We can extract the catchability coefficient $q$ from the model:
+
+```{r}
+(q = -model$coefficients[2])
+```
+
+### 3. Calculate an estimate of blackfish abundance in Twill Pond at the start of your experiment.
+
+```{r}
+(N = model$coefficients[1] / q)
+```
+
+# Problem 2: Mark-recapture
+
+### 1. Calculate Petersen estimates of abundance for each of these five ponds.
+
+```{r}
+data = read.csv("mr.dat.csv")
+head(data)
+```
+
+```{r}
+data$petersen = data$n1 * data$n2 / data$m2
+head(data)
+```
+
+### 2. Calculate Chapman estimates of abundance for each pond, along with the variance in these estimates and the coefficient of variation (CV) for each abundance estimate.
+
+```{r}
+data$chapman = (data$n1 + 1) * (data$n2 + 1) / (data$m2 + 1) - 1
+data$chapman.var = (
+    (data$n1 + 1) * (data$n2 + 1) * (data$n1 - data$m2) * (data$n2 - data$m2) 
+    / ((data$m2 + 1)^2 * (data$m2 + 2))
+)
+data$chapman.cv = sqrt(data$chapman.var) / data$chapman
+head(data[,c("Site", "chapman", "chapman.var", "chapman.cv")])
+```
+
+### 3. Calculate Bailey estimates of abundance for each pond, along with variances and associated CV's.
+
+```{r}
+data$bailey = data$n1 * (data$n2 + 1) / (data$m2 + 1)
+data$bailey.var = (
+    data$n1^2 * (data$n2 + 1) * (data$n2 - data$m2) 
+    / ((data$m2 + 1)^2 * (data$m2 + 2))
+)
+data$bailey.cv = sqrt(data$chapman.var) / data$chapman
+head(data[,c("Site", "bailey", "bailey.var", "bailey.cv")])
+```
+
+### 4. Please describe under what conditions of this experiment the Bailey as opposed to Petersen or Chapman estimates should be most appropriate.
+
+Being a binominal model the Bailey estimator assumes that recaptures of individuals are possible whereas in Chapman this is not the case. Practically this means that
+the probability of capture does not change as you sample individuals (because in theory you're putting those individuals back as you sample them). 
+Therefore the Bailey estimator is most appropriate when either your sample size is very small (and therefore there are only minimal changes to the 
+sample probability) or if you are in fact able to recapture individuals. But in general if recapture isn't possible you might as well as go with the Chapman
+estimator. 
+
+The other case where the probability of capture may not change dramatically (and certainly not as much as a hypergeometric distribution would expect)
+is if you do something like stratified sampling where you aren't actually sampling the same population of individuals but instead are taking individuals 
+from a series of different strata. Then the probability of capture in each strata is (in theory) not affected by what happens in other strata. So the 
+Bailey model may be useful here as well.
+
+# Problem 3: Pacific Cod
+
+### 1. A design-based biomass index.
+
+```{r}
+trawl = read.csv("race_goa_pcod.csv")
+stratum = read.csv("Stratum Descriptions.csv")
+stratum = stratum[stratum$Survey == "GOA",]
+head(trawl)
+head(stratum)
+```
+
+```{r}
+unique(trawl$Scientific.Name)
+```
+
+```{r}
+cpue_by_stratum = trawl %>% group_by(Year, Stratum) %>% summarize(CPUE = mean(Weight.CPUE..kg.km2.))
+area_by_stratum = stratum %>% select(Stratum, Area..km2.)
+by_stratum = inner_join(cpue_by_stratum, area_by_stratum, by="Stratum")
+by_stratum$biomass = by_stratum$CPUE * by_stratum$Area..km2.
+total_biomass = by_stratum %>% group_by(Year) %>% summarize(biomass = sum(biomass))
+plot(
+    x=total_biomass$Year,
+    y=total_biomass$biomass,
+    xlab="Year",
+    ylab="Total Biomass Estimate",
+    type="l"
+)
+```
+
+```{r}
+cpue_by_stratum.var = trawl %>% group_by(Year, Stratum) %>% summarize(CPUE.var = var(Weight.CPUE..kg.km2.), stations = n())
+cpue_by_stratum.var = cpue_by_stratum.var[!is.na(cpue_by_stratum.var$CPUE.var),] # sometimes we have single samples
+by_stratum = inner_join(cpue_by_stratum.var, area_by_stratum, by="Stratum")
+by_stratum$biomass.var = by_stratum$CPUE.var * (by_stratum$Area..km2. ^ 2) / by_stratum$stations
+total_biomass.var = by_stratum %>% group_by(Year) %>% summarize(biomass.var = sum(biomass.var))
+by_year = inner_join(total_biomass, total_biomass.var, by="Year")
+plot(
+    x=by_year$Year,
+    y=by_year$biomass.var,
+    xlab="Year",
+    ylab="Estimate of Variance",
+    type="l"
+)
+```
+
+The table:
+
+```{r}
+by_year$biomass.sd = sqrt(by_year$biomass.var)
+by_year$biomass.cv = by_year$biomass.sd / by_year$biomass
+by_year
+```
+
+### 2. Model-based biomass index with a year effect only.
+
+```{r}
+trawl$fYear = factor(trawl$Year)
+glm.year = glm(
+    log(Weight.CPUE..kg.km2. + 1) ~ fYear, data=trawl
+)
+by_year = inner_join(by_year, trawl %>% distinct(Year, fYear), by="Year")
+by_year$glm.year = exp(predict(glm.year, newdata=by_year)) - 1
+by_year
+```
+
+### 3. Model-based biomass index that controls for among strata variation in average biomass.
+
+```{r}
+trawl$fStratum = factor(trawl$Stratum)
+glm.year_stratum = glm(
+    log(Weight.CPUE..kg.km2. + 1) ~ fYear + fStratum, data=trawl
+)
+by_year$fStratum = trawl$fStratum[1]
+by_year$glm.year_stratum = exp(predict(glm.year_stratum, newdata=by_year)) - 1
+by_year[,c("biomass", "glm.year", "glm.year_stratum")]
+```
+
+### 4. Finally, please plot the three biomass indices to compare and interpret their trends across time, in addition to your table of annual values.
+
+```{r}
+by_year$biomass.norm = by_year$biomass / max(by_year$biomass)
+by_year$glm.year.norm = by_year$glm.year / max(by_year$glm.year)
+by_year$glm.year_stratum.norm = by_year$glm.year_stratum / max(by_year$glm.year_stratum)
+plot.default(
+    by_year$Year, 
+    by_year$biomass.norm, 
+    type="l",
+    col="orange", 
+    xlab="Year", 
+    ylab="Biomass Index", 
+    main="Comparison of Biomass Indices"
+)
+lines(
+    by_year$Year, 
+    by_year$glm.year.norm, 
+    col="cyan"
+)
+lines(
+    by_year$Year, 
+    by_year$glm.year_stratum.norm, 
+    col="purple"
+)
+legend(
+    "bottomleft", 
+    legend=c("Design-based", "Model (Year)", "Model (Year + Stratum)"), 
+    col=c("orange", "cyan", "purple"), 
+    lty=1
+)
+```
+
+```{r}
+by_year[,c("Year", "biomass", "biomass.var", "biomass.sd", "biomass.cv", "glm.year", "glm.year_stratum")]
+```
+
+The model based indices seem to follow the same pattern reasonably well whereas the design based
+index has a pretty extreme peak in 2009. It's interesting to note that the variance and the CV both 
+are exceptionally high in 2009 as well. Add onto this the fact that the stratum based model is the
+least "peaky" of the three and it seems likely that one of the strata in that year had highly variable
+CPUE. 
+
+It's also interesting to note that while the design based index has a peak around 1996 the model based 
+indices just seem this as part of a downward trend. 
+
+Finally the stratum and year based model in later years (past 2000) seems 
+to be slightly under the year only model. So perhaps a "more productive" stratum is being over represented 
+in the later as opposed to the earlier years.
+
+# Problem 4: Wild Hogs
+
+
+```{r}
+data = data.frame(
+    stratum = c(1, 2, 3, 4),
+    sampling_units = c(200, 100, 500, 200),
+    sampled_units = c(50, 60, 20, 10),
+    abundance_per_unit = c(45, 56, 32, 20),
+    variance_per_stratum = c(1200, 3000, 2900, 6000)
+)
+head(data)
+```
+
+### 1. An estimate of total hog abundance within each stratum.
+```{r}
+data$abundance_per_stratum = data$sampling_units * data$abundance_per_unit
+data[,c("stratum", "abundance_per_stratum")]
+```
+
+### 2. The estimated hog population total in the entire region.
+```{r}
+(total_pop = sum(data$abundance_per_stratum))
+
+```
+
+### 3. An unbiased estimate of the variance of the hog population total.
+
+```{r}
+(total_pop.var = sum(
+    data$sampling_units * (data$sampling_units - data$sampled_units) * data$variance_per_stratum / data$sampled_units
+))
+```
+
+### 4. The coefficient of variation for the estimate of the hog population total.
+
+```{r}
+(total_pop.cv = sqrt(total_pop.var) / total_pop)
+```
+
+### 5. An approximate 95% confidence interval for the population total.
+
+```{r}
+alpha = 0.05
+z = qnorm(1-alpha/2)
+lower = total_pop - z * sqrt(total_pop.var)
+upper = total_pop + z * sqrt(total_pop.var)
+c(lower, upper)
+```
+
+### 6. An unbiased estimate of mean hog abundance per 1-km2 for the entire population.
+
+```{r}
+(pop_per_unit = total_pop / sum(data$sampling_units))
+```
+
+### 7. An unbiased estimate of the variance of the mean hog abundance per 1-km2.
+
+```{r}
+(pop_per_unit.var = sum(
+    (data$sampling_units / sum(data$sampling_units)) ^ 2 * ((data$sampling_units - data$sampled_units) / sum(data$sampling_units)) * data$variance_per_stratum / data$sampled_units
+))
+```
+
+### 8. An approximate 95% confidence interval for the mean hog abundance per 1-km2
+
+```{r}
+alpha = 0.05
+z = qnorm(1-alpha/2)
+lower = pop_per_unit - z * sqrt(pop_per_unit.var)
+upper = pop_per_unit + z * sqrt(pop_per_unit.var)
+c(lower, upper)
+```
+
+# Problem 5: Experimental Design
+
+### 1. Movement among spatial units within the scope of your mark-recapture experiment. 
+
+For this experiment we'd need to first choose our spatial units and then use distinct tags 
+for each spatial unit. This would allow us to then track which fish have come from where. 
+
+### 2. Survival among sampling periods within the mark-recapture experiment.
+
+Here we could take advantage of a Jolly-Seber design. We'd repeatedly capture,
+count marked individuals, mark unmarked individuals and release them. Then the Jolly-Seber 
+model allows us to estimate the "survival" rate among sampling periods. Note though 
+that "survival" will include both emigration and mortality. 
+
+### 3. Differences across time in the probability of detection across sampling periods.
+
+Here we could use individual mark recapture with a time model. This model assumes that 
+the detection probability is the same across all individuals but is allowed to differ over
+time (i.e. sampling periods).
+
+# Thank You!
