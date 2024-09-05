@@ -1,0 +1,113 @@
+---
+title: STAT641 - Homework 2
+author: Marcel Gietzmann-Sanders
+---
+
+## Problem 1
+
+(a) I suppose I would wonder whether this measurement is all that extreme given
+my initial hypothesis. More precisely I'd wonder what the probability finding at 
+least this many hypertensive people in a selection of five would be given my
+hypothesis. 
+
+```{r}
+sum(dbinom(c(4, 5), 5, 0.3))
+```
+
+Given this is exceedingly small (only ~3% likely given my hypothesis)
+I would likely reject my initial hypothesis and decide that $\theta$ is likely 
+higher than 0.3. I wouldn't necessarily say $\theta=0.2$ given the small sample size
+but it's certainly higher than 0.3. 
+
+(b) At this point, given the large sample size I would likely estimate $\theta=\frac{400}{1000}=0.4$.
+I have enough data here that whatever ill conceived notions I had at the beginning had better be 
+laid to rest. 
+
+## Problem 2
+
+Let's start by gathering what we know. 
+
+$$P(Y=1|\theta = 1)=0.975$$
+$$P(Y=0|\theta=0)=0.95$$
+$$P(\theta=1)=0.01$$
+
+(a) What we are concerned with here is the probability that someone has the
+disease given they tested positive - $P(\theta=1|Y=1)$.
+
+Using Bayes rule we have:
+
+$$P(\theta=1|Y=1)=\frac{P(Y=1|\theta=1)P(\theta=1)}{P(Y=1)}$$
+
+We know $P(Y=1|\theta=1)$ and $P(\theta=1)$ so all that remains is to determine 
+$P(Y=1)$
+
+$$P(Y=1)=P(Y=1|\theta=0)P(\theta=0)+P(Y=1|\theta=1)P(\theta=1)$$
+
+$$P(Y=1)=\left[1-P(Y=0|\theta=0)\right]\left[1-P(\theta=1)\right]+P(Y=1|\theta=1)P(\theta=1)$$
+
+$$P(Y=1)=0.05(0.99) + 0.975(0.01)=0.05925$$
+
+Therefore we have:
+
+$$P(\theta=1|Y=1)=\frac{0.975(0.01)}{0.05925}\approx0.165$$
+
+So of those who test postive for the disease approximately 16.5% of them 
+will actually have the disease. 
+
+(b) In this case we're interested in $P(\theta=0|Y=0)$
+
+$$P(\theta=0|Y=0)=\frac{P(\theta=0|Y=0)P(\theta=0)}{P(Y=0)}$$
+
+$$P(\theta=0|Y=0)=\frac{P(\theta=0|Y=0)\left[1-P(\theta=1)\right]}{\left[1-P(Y=0)\right]}$$
+
+$$P(\theta=0|Y=0)=\frac{0.95(0.99)}{0.94075}\approx 0.9997$$
+
+So if someone takes the test and gets a negative there is a approximately 99.97% chance that
+they indeed are disease free. If you get a negative there's more or less no need to be worried.
+
+## Problem 3
+
+Let $L$ stand in for our color of labrador with 1, 2, 3 being yellow, 
+chocolate, and black respectively. Let $B=1$ mean they love to play 
+fetch and $B=0$ mean that they don't. We are interested in the following:
+
+$$P(L=x|B=1)$$
+
+In general:
+
+$$P(L=x|B=1)=\frac{P(B=1|L=x)P(L=x)}{P(B=1)}$$
+
+We have the numerators for our various colors so all we really need to 
+determine is $P(B=1)$. But this is just:
+
+$$P(B=1)=\sum_x P(B=1|L=x)P(L=x)$$
+
+$$P(B=1)=0.95(0.5)+0.92(0.3) +0.9(0.2)=0.931$$
+
+So now we have:
+
+$$P(L=1|B=1)=\frac{0.95(0.5)}{0.931}\approx 0.51$$
+
+$$P(L=2|B=1)=\frac{0.92(0.3)}{0.931}\approx 0.3$$
+
+$$P(L=3|B=1)=\frac{0.9(0.2)}{0.931}\approx 0.19$$
+
+So if we know the dog likes to play fetch there's a 51% probability it's a yellow,
+30% that its a chocolate lab, and 19% that its a black lab. Clearly playing fetch 
+is not particularly discriminating. 
+
+## Problem 4
+
+a. In this case the likelihood is just:
+
+$$p(3|\theta)= {8\choose 3}\theta^3(1-\theta)^5=56\theta^3(1-\theta)^5$$
+
+b. Let's plot it!
+
+```{r}
+n <- 8
+y <- 3
+theta <- seq(0, 1, length=200)
+likelihood <- choose(n,y) * theta ^ y * (1 - theta) ^ (n - y)
+plot(theta, likelihood, type='l')
+```
