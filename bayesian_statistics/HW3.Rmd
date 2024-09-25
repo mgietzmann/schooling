@@ -1,0 +1,236 @@
+---
+title: STAT641 - Homework 3
+author: Marcel Gietzmann-Sanders
+---
+
+## Problem 1
+
+(a) The posterior distribution for $\lambda$ is given by:
+
+$$P(\lambda | y) = Gamma(\sum_i y_i + a, n + b)=\kappa \lambda^{\sum y_i + a - 1}e^{-(n+b)\lambda}$$
+
+(b) Given our specific prior and the moose count data we have:
+
+$$a^* = 4(0) + 5(1) + 6(2) + 4(3) + (1)5 + 2=36$$
+$$b^* = 20 + 3=23$$
+
+$$P(\lambda | y) = Gamma(36, 23) = \frac{23^{36}}{\Gamma(36)} \lambda^{35}e^{-23\lambda}$$
+
+The 95% credible interval for $\lambda$ is given by:
+```{r}
+quantile(rgamma(10000, 36, rate=23), probs=c(0.025, 0.975))
+```
+
+So there's a 95% change that the true value for $\lambda$ falls between those values given the data.
+
+The posterior mean is $$a^*/b^*=36/23\approx 1.565$$ and the posterior variance is $$a^*/{b^*}^2=36/23^2\approx 0.068$$
+
+## Problem 2
+
+We now have:
+
+$$P(\lambda | y)=\frac{1}{m(y)}\left[\prod_i \frac{e^{-\lambda}\lambda^{y_i}}{y_i!}\right]\frac{1}{\Gamma(a)b^a}\lambda^{a-1}e^{-\lambda /b}$$
+$$=\frac{1}{m(y)\Gamma(a)b^a\prod y_i!}e^{-n\lambda}\lambda^{\sum y_i}\lambda^{a-1}e^{-\lambda/b}$$
+$$=\kappa e^{-\lambda(n+1/b)}\lambda^{\sum y_i + a -1}=Gamma(\sum y_i + a - 1, (n+1/b)^{-1})$$
+
+Given $a=2$ and $b=1/3$ and our data we have:
+
+$$a^*=34+2=36$$
+
+$$b^*=(20+3)^{-1}=1/23$$
+
+$$P(\lambda |y)=Gamma(36, 1/23)=\frac{1}{\Gamma(36)(1/23)^{36}}\lambda^{35}e^{-\lambda/(1/23)}$$
+$$=\frac{23^{36}}{\Gamma(36)}\lambda^{35}e^{-23\lambda}$$
+
+Which is precisely what we had in problem 1! 
+
+The 95% credible interval for $\lambda$ is now given by:
+
+```{r}
+quantile(rgamma(10000, 36, scale=1/23), probs=c(0.025, 0.975))
+```
+
+So there's a 95% change that the true value for $\lambda$ falls between those values given the data.
+
+The posterior mean is $$a^* b^*=36/23\approx 1.565$$ and the posterior variance 
+is $$a^* (b^*)^2=36/23^2\approx 0.068$$.
+
+## Problem 3
+
+The pdf for the Beta distribution is given by:
+
+$$\pi(\theta) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1}, 0<\theta<1, (a>1, b>1)$$
+
+We want to solve:
+
+$$\frac{d\pi}{d\theta}=0$$
+
+when $a>1$ and $b>1$. 
+
+$$\frac{d\pi}{d\theta}=C\left[ (a-1)\theta^{a-2}(1-\theta)^{b-1} - \theta^{a-1}(b-1)(1-\theta)^{b-2}\right]$$
+
+$$=C\theta^{a-2}(1-\theta)^{b-2}\left[ (a-1)(1-\theta) - \theta(b-1)\right]$$
+
+$$=C\theta^{a-2}(1-\theta)^{b-2}\left[ a - 1 + (2 - a - b)\theta \right]$$
+
+where:
+
+$$C=\frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}$$
+
+Now given $0<\theta<1$, the only way for this expression to equal 0 is if:
+
+$$a - 1 + (2 - a - b)\theta=0$$
+
+Therefore we have:
+
+$$\theta=\frac{a-1}{a+b-2}$$
+
+Which as the maximum of our pdf is the mode of our distribution. 
+
+## Problem 4
+
+Here our pdf is given by:
+
+$$\pi(\theta)=\frac{b^a}{\Gamma(a)}\theta^{a-1}e^{-b\theta}, \theta >0, (a>0, b>0)$$
+
+In this case we have:
+
+$$\frac{d\pi}{d\theta} = C\left[ (a-1)\theta^{a-2}e^{-b\theta} - be^{-b\theta}\theta^{a-1}\right]$$
+$$=C\theta^{a-2}e^{-b}\left[(a-1)-b\theta \right]$$
+
+where:
+
+$$C=\frac{b^a}{\Gamma(a)}$$
+
+In this case the expression can only be 0 if:
+
+$$(a-1)-b\theta=0$$
+
+And therefore:
+
+$$\theta = \frac{a-1}{b}$$
+
+which gives us the mode of our distribution. 
+
+## Problem 5 
+
+(a) In general for a binomial experiment $y \sim Binomial(n, \theta)$ and a prior $\theta \sim Beta(a, b)$
+our posterior distribution will be:
+
+$$P(\theta|y)=Beta(a+y,b+n-y)$$
+
+In our case we have:
+
+$$a=5, b=3, y=1, n=15$$
+
+So that our posterior distribution is:
+
+$$P(\theta|y)=Beta(6, 17)$$
+
+(b) The prior mode is 
+
+$$\theta_{prior mode}=\frac{5 - 1}{5 + 3 -2}=4/6\approx 0.667$$
+
+The posterior mode is 
+
+$$\theta_{postmode}=\frac{6 - 1}{6 + 17 - 2}=5/21\approx 0.238$$
+
+For the maximum likelihood we have:
+
+$$\theta_{MLE}=\frac{y}{n}=1/15\approx0.067$$
+
+(c) We'll use R here:
+
+```{r}
+quantile(rbeta(10000, 6, 17), c(0.025, 0.975))
+```
+
+Therefore there's a 95% chance our true value for $\theta$ lies between these
+two values. 
+
+(d) The prior mean and variance:
+
+$$\mu_{prior}=\frac{5}{5+3}=5/8\approx 0.625$$
+$$var_{prior}=\frac{5(3)}{(5+3)^2(5+3+1)}=15/576\approx 0.026$$
+
+The posterior mean and variance:
+
+$$\mu_{post}=\frac{6}{6+17}=6/23\approx 0.261$$
+$$var_{post}=\frac{6(17)}{(6+17)^2(6+17+1)}=102/12696\approx 0.008$$
+
+Clearly the mean was brought much lower by the data (which makes sense given 
+how few pieces of banana were caught) and the variance also shrunk quite a lot 
+indicating that the boundaries we are putting on the true value have shrunk given
+the data. 
+
+## Problem 6
+
+(a) Given an observation model that is normal with known variance:
+
+$$y \sim N(\theta, \sigma_0^2)$$
+
+and a prior:
+
+$$\pi(\theta) \sim N(\mu_0, \tau^2_0)$$
+
+we know that the posterior distribution will also be normal:
+
+$$P(\theta | y_1, ..., y_n)=N(\mu_n, \tau_n^2)$$
+
+where:
+
+$$\mu_n = \frac{\mu_0/\tau_0^2+n\bar{y}/\sigma^2_0}{1/\tau_0^2+n/\sigma^2_0}$$
+
+$$\tau_n^2=(1/\tau^2_0+n/\sigma^2_0)^{-1}$$
+
+In our case:
+
+$$n=10,\bar{y}=5.12,\sigma_0^2=0.9,\mu_0=5.3,\tau_0^2=100$$
+
+So we have:
+
+$$\mu_n = \frac{5.3/100+10(5.12)/0.9}{1/100+10/0.9}\approx 5.12$$
+
+(which makes sense given $\tau_0^2$ is very large and $\mu_0$ is not)
+
+$$\tau_n^2=(1/100 + 10/0.9)^{-1}\approx 0.09$$
+
+So our posterior distribution is:
+
+$$P(\theta | y_1, ..., y_n)=N(5.12, 0.09)$$
+
+(b) The 95% credible interval is given by:
+
+$$\left[5.12 - 1.96(0.3), 5.12 + 1.96(0.3)\right]\approx \left[4.53, 5.71\right]$$
+
+and therefore we are asserting that there's a 95% probability that the true value of $\theta$
+lies in that range. 
+
+(c) The prior mode is $\mu_0=5.3$, the posterior mode is $\mu_n=5.12$ and the 
+maximum likelihood estimate is $\bar{y}=5.12$. 
+
+(d) Yes the mean of the data does fall in the credible interval. It doesn't always have to 
+be this way given the fact that for small $n$ we can always choose a prior that washes
+out our data. Specifically we can wash out the data by simple decreasing $\tau^2_0$ to 
+some very very small value as compared to $\sigma^2_0$.
+
+For example let:
+
+$\bar{y} = 0, n=2, \sigma_0^2=1000, \tau_0^2=0.01, \mu_0=10$
+
+Then we'll have:
+
+$$\mu_n \approx 10$$
+
+$$\tau^2_n \approx 0.01$$
+
+leaving us with a 95% credible interval of:
+
+$$\left[9.804, 10.196\right]$$
+
+which does not contain $\bar{y}=0$.
+
+Obviously choosing such a prior seems a tad insane but you could do it and therefore normal-normal 
+problems don't guarantee that your mean falls in the credible interval. 
+
+

@@ -1,0 +1,5 @@
+model{
+    Y ~ dbin(theta,N)
+    theta ~ dbeta(A,B)
+    y.predicted ~ dbern(theta)
+}

@@ -1,0 +1,249 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={STAT641 - Homework 1},
+  pdfauthor={Marcel Gietzmann-Sanders},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+
+\title{STAT641 - Homework 1}
+\author{Marcel Gietzmann-Sanders}
+\date{}
+
+\begin{document}
+\maketitle
+
+\hypertarget{general-questions}{%
+\section{1. General Questions}\label{general-questions}}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\tightlist
+\item
+  Marcel Gietzmann-Sanders - 31308957
+\item
+\item
+  No
+\item
+  Just wanting a broad introduction to the subject.
+\item
+  I'm studying fisheries and frequentists stats is everywhere. I'd like
+  to get a better handle on the Bayesian side of things.
+\item
+  Yes
+\item
+  This will be the first time.
+\item
+  Yes
+\item
+  I've been a software engineer working primarily in Python for the past
+  7 years. All of my classes here have used R. So at this point I
+  probably have over 10,000 hours of Python and several hundred hours of
+  R experience.
+\item
+  I'm on a macbook but I typically run a Linux VM for my work.
+\item
+  No
+\end{enumerate}
+
+\hypertarget{opening-problems}{%
+\section{2. Opening Problems}\label{opening-problems}}
+
+\hypertarget{a-use-r-to-simulate-the-following-state-the-values-it-generates.}{%
+\subsubsection{(a) Use R to simulate the following; state the values it
+generates.}\label{a-use-r-to-simulate-the-following-state-the-values-it-generates.}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{rbinom}\NormalTok{(}\DecValTok{5}\NormalTok{, }\DataTypeTok{size=}\DecValTok{12}\NormalTok{, }\DataTypeTok{prob=}\FloatTok{0.4}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 4 3 4 1 5
+\end{verbatim}
+
+\(n\) is the number of trials per experiment and \(p\) is the
+probability of a success (or equivalently, of a 1) per trial.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{rnorm}\NormalTok{(}\DecValTok{5}\NormalTok{, }\DataTypeTok{mean=}\FloatTok{0.0}\NormalTok{, }\DataTypeTok{sd=}\FloatTok{0.75}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1]  0.6877932  0.8038130  0.6556525  0.6992979 -0.4075211
+\end{verbatim}
+
+\hypertarget{b-confidence-intervals}{%
+\subsubsection{(b) Confidence Intervals}\label{b-confidence-intervals}}
+
+\begin{quote}
+I purchase a random sample of n = 49 avocados at Fred Meyer. The sample
+mean weight is 4.3 ounces with a standard deviation of 0.36 ounces.
+Calculate a 95\% confidence interval for the mean weight of all such
+avocados, and interpret your confidence interval. (Be sure to state the
+formula you're using, and fill in the various values in the formula.)
+What, exactly, is it that happens with 95\% probability? What does the
+``95\%'' refer to when constructing a 95\% confidence interval.
+\end{quote}
+
+The formula for a 95\% confidence interval is:
+
+\[\bar{\mu} \pm Z_{0.975}\frac{s}{\sqrt{n}}\]
+
+where \(\bar{\mu}\) is the sample mean, \(s\) is the sample standard
+deviation, and \(Z_{0.975}\) is the z-score at which the cumulative
+probability of a normal distribution is 97.5\%. Because this is two
+tailed, choosing the 97.5\% ensures that we are covering 95\% of the
+distribution.
+
+In our case this becomes:
+
+\[4.3\pm 1.96 \frac{0.36}{\sqrt{49}}=4.3\pm 0.1008\]
+
+So this is saying (informally) that we are 95\% confident that the true
+mean weight of avocados at Fred Meyer lies somewhere between 4.1992 and
+4.4008 ounces. Formally if we were to repeat this experiment over and
+over 95\% of the time the true mean weight would lie within the
+confidence interval derived in that experiment.
+
+\hypertarget{c-hypothesis-testing}{%
+\subsubsection{(c) Hypothesis Testing}\label{c-hypothesis-testing}}
+
+\begin{quote}
+I conducted a poll consisting of a random sample of n = 1000 sane
+individuals. 790 of those polled answered ``Yes'' to the question, ``Is
+the world going insane?'' Test the hypotheses, H0 : p = 0.75 versus Ha :
+p \textgreater{} 0.75, where p is the proportion of all sane individuals
+who believe the world is going insane. (It's okay to conduct the test by
+hand or to use the R function prop.test.) At level α = 0.05, do we
+reject H0 or fail to reject H0?
+
+It turns out that the p-value for this test is 0.00174. At level α =
+0.01, should we reject H0? Why or why not?
+\end{quote}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{prop.test}\NormalTok{(}\DecValTok{790}\NormalTok{, }\DecValTok{1000}\NormalTok{, }\DataTypeTok{p=}\FloatTok{0.75}\NormalTok{, }\DataTypeTok{alternative=}\StringTok{"greater"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  1-sample proportions test with continuity correction
+## 
+## data:  790 out of 1000, null probability 0.75
+## X-squared = 8.3213, df = 1, p-value = 0.001959
+## alternative hypothesis: true p is greater than 0.75
+## 95 percent confidence interval:
+##  0.7675285 1.0000000
+## sample estimates:
+##    p 
+## 0.79
+\end{verbatim}
+
+In this case the p-value is 0.001959 which is far below our
+\(\alpha=0.05\) threshold. Therefore we can go ahead and reject the null
+hypothesis.
+
+With either 0.00174 or our 0.001959 we should reject the null hypothesis
+given an \(\alpha=0.01\) because we are still below the threshold.
+
+\end{document}

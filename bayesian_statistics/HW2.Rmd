@@ -15,7 +15,7 @@ sum(dbinom(c(4, 5), 5, 0.3))
 ```
 
 Given this is exceedingly small (only ~3% likely given my hypothesis)
-I would likely reject my initial hypothesis and decide that $\theta$ is likely 
+I would reject my initial hypothesis and decide that $\theta$ is likely 
 higher than 0.3. I wouldn't necessarily say $\theta=0.2$ given the small sample size
 but it's certainly higher than 0.3. 
 
@@ -52,18 +52,20 @@ Therefore we have:
 $$P(\theta=1|Y=1)=\frac{0.975(0.01)}{0.05925}\approx0.165$$
 
 So of those who test postive for the disease approximately 16.5% of them 
-will actually have the disease. 
+will actually have the disease. Therefore there is reason for concern if you 
+test positive, but more often than not those who test positive won't have 
+the disease. 
 
 (b) In this case we're interested in $P(\theta=0|Y=0)$
 
-$$P(\theta=0|Y=0)=\frac{P(\theta=0|Y=0)P(\theta=0)}{P(Y=0)}$$
+$$P(\theta=0|Y=0)=\frac{P(Y=0|\theta=0)P(\theta=0)}{P(Y=0)}$$
 
 $$P(\theta=0|Y=0)=\frac{P(\theta=0|Y=0)\left[1-P(\theta=1)\right]}{\left[1-P(Y=0)\right]}$$
 
 $$P(\theta=0|Y=0)=\frac{0.95(0.99)}{0.94075}\approx 0.9997$$
 
-So if someone takes the test and gets a negative there is a approximately 99.97% chance that
-they indeed are disease free. If you get a negative there's more or less no need to be worried.
+So if someone takes the test and gets a negative there is an approximately 99.97% chance that
+they are indeed disease free. If you get a negative there's more or less no need to be worried.
 
 ## Problem 3
 
@@ -93,7 +95,7 @@ $$P(L=2|B=1)=\frac{0.92(0.3)}{0.931}\approx 0.3$$
 $$P(L=3|B=1)=\frac{0.9(0.2)}{0.931}\approx 0.19$$
 
 So if we know the dog likes to play fetch there's a 51% probability it's a yellow,
-30% that its a chocolate lab, and 19% that its a black lab. Clearly playing fetch 
+30% that its a chocolate lab, and 19% that its a black lab. Clearly loving to play fetch 
 is not particularly discriminating. 
 
 ## Problem 4
