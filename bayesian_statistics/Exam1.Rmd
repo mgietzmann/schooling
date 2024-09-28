@@ -1,0 +1,72 @@
+---
+title: STAT641 - Take Home Exam 1
+author: Marcel Gietzmann-Sanders
+---
+
+## Problem 1
+
+### (a)
+
+```{r}
+y = c(0.24, 0.59, 0.62, 0.16, 0.77, 1.33, 0.92, 0.19, 0.33, 0.25, 0.59, 0.32)
+qqnorm(y)
+qqline(y)
+```
+
+### (b) 
+
+$$\bar{y} \pm t_{(0.05, n-1)}\frac{s}{\sqrt{n}}$$
+
+where $t_{(0.05, n-1)}$ is the critical value for a t test for significance level 0.05 and degrees of freedom $n-1$ and $s$ is the sample variance.
+
+We'll use R to get the critical value and compute the confidence interval:
+
+```{r}
+s = sqrt(var(y))
+n = length(y)
+df = n - 1
+
+c(mean(y) + qt(0.025, df=df) * s/ sqrt(n), mean(y) + qt(0.975, df=df) * s / sqrt(n))
+```
+
+### (c) 
+
+```{r}
+c(sqrt(df/qchisq(0.025, df=df, lower.tail=FALSE)) * s, sqrt(df/qchisq(0.975, df=df, lower.tail=FALSE)) * s)
+```
+
+## Problem 2
+
+```{r}
+c(1,2)
+library(rjags)
+data <- list(y=y, n=n)
+inits <- list(theta=mean(y), sigma=s)
+fname <- "exam-model.txt"
+iters <- 5000
+thin <- 1
+
+model <- jags.model(
+    file=fname, 
+    data=data,
+    inits=inits,
+    n.chains=1,
+    n.adapt=1000,
+    quiet=FALSE
+)
+```
+
+```{r}
+variables <- c("theta", "sigma")
+samples <- coda.samples(
+    model, variables, n.iter = iters, thin = thin
+)
+theta <- samples[[1]][,"theta"]
+sigma <- samples[[1]][,"sigma"]
+plot(theta)
+plot(sigma)
+(quantile(theta, probs=c(0.025, 0.975)))
+quantile(sigma, probs=c(0.025, 0.975))
+```
+
+
