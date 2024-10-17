@@ -13,35 +13,82 @@ qqnorm(y)
 qqline(y)
 ```
 
+Given the small number of samples it's hard to draw any firm conclusions about whether
+or not it is fair to consider these data as coming from a normal distribution. Looking
+at the QQ plot the central quantiles look to follow a linear relationship with a normal 
+distribution's quantiles but perhaps the ends of the sample distribution give some cause for concern.
+If I were to look at this I'd say this was probabably a fair assumption to start with but 
+I'd want to collect more data if possible. 
+
+\newpage
+
 ### (b) 
 
-$$\bar{y} \pm t_{(0.05, n-1)}\frac{s}{\sqrt{n}}$$
+We'll be using the following formula:
 
-where $t_{(0.05, n-1)}$ is the critical value for a t test for significance level 0.05 and degrees of freedom $n-1$ and $s$ is the sample variance.
+$$\bar{y} \pm t_{(\alpha/2, n-1)}\frac{s}{\sqrt{n}}$$
 
-We'll use R to get the critical value and compute the confidence interval:
+where $s$ is the sample standard deviation and $t_{(\alpha/2, n-1)}$ is the value 
+at which a $t$-distribution with degrees of freedom $n-1$ has a cumulative probability 
+of $\alpha /2$ (where $\alpha$ is our significance level). 
+
+Using R to get our $t_{(\alpha/2, n-1)}$:
 
 ```{r}
-s = sqrt(var(y))
 n = length(y)
 df = n - 1
 
-c(mean(y) + qt(0.025, df=df) * s/ sqrt(n), mean(y) + qt(0.975, df=df) * s / sqrt(n))
+qt(0.025, df=df)
 ```
+
+We then get:
+
+$$0.5258 \pm 2.201 \frac{0.3521}{\sqrt{12}}=0.5258 \pm 0.2237$$
+
+So our 95% confidence interval for $\theta$ is:
+
+$$\left( 0.3021, 0.7495 \right)$$
 
 ### (c) 
 
+Here we'll use R again to get the chi-squared quantiles we need to construct this 
+confidence interval:
+
 ```{r}
-c(sqrt(df/qchisq(0.025, df=df, lower.tail=FALSE)) * s, sqrt(df/qchisq(0.975, df=df, lower.tail=FALSE)) * s)
+c(qchisq(0.025, df=df, lower.tail=FALSE), qchisq(0.975, df=df, lower.tail=FALSE))
 ```
+
+Therefore we have a 95% confidence interval for $\sigma$ of:
+
+$$\left( \sqrt{\frac{11}{21.92}}0.3521,  \sqrt{\frac{11}{3.8157}}0.3521\right)$$
+$$=\left( 0.2494, 0.5978\right)$$
+
+\newpage
 
 ## Problem 2
 
+### (a)
+
+Here is my model statement:
+
+```
+model{
+    for(i in 1:n) {
+        y[i] ~ dnorm(theta, y.precision)
+    }
+    sigma ~ dunif(0.0001, 1.0)
+    y.precision <- 1/(sigma*sigma)
+
+    theta ~ dnorm(0, 1/10000)
+}
+```
+
+And then the code that builds the model:
+
 ```{r}
-c(1,2)
 library(rjags)
 data <- list(y=y, n=n)
-inits <- list(theta=mean(y), sigma=s)
+inits <- list(theta=mean(y), sigma=sqrt(var(y)))
 fname <- "exam-model.txt"
 iters <- 5000
 thin <- 1
@@ -54,19 +101,71 @@ model <- jags.model(
     n.adapt=1000,
     quiet=FALSE
 )
-```
-
-```{r}
 variables <- c("theta", "sigma")
 samples <- coda.samples(
     model, variables, n.iter = iters, thin = thin
 )
 theta <- samples[[1]][,"theta"]
 sigma <- samples[[1]][,"sigma"]
+```
+
+### (b) 
+
+For the $\theta$ we have:
+
+```{r}
 plot(theta)
+```
+\newpage
+```{r}
+hist(theta,probability=TRUE,main="", xlab="theta")
+```
+
+\newpage 
+And for $\sigma$ we have:
+
+```{r}
 plot(sigma)
-(quantile(theta, probs=c(0.025, 0.975)))
+```
+\newpage
+```{r}
+hist(sigma,probability=TRUE,main="", xlab="sigma")
+```
+
+Both of these traceplots look quite grassy so it seems like the model has converged. 
+And it looks like both of them are centered around our sample mean and variance respectively. 
+It's interesting to see the longer right tail on the histogram for $\sigma$. It makes 
+some sense that it would be there given the lower bound on $\sigma$. 
+
+\newpage
+### (c) 
+
+Our 95% credible interval for $\theta$ is
+
+```{r, results='hide', message=FALSE}
+quantile(theta, probs=c(0.025, 0.975))
+```
+
+$$\left( 0.29, 0.7525 \right)$$
+
+While our 95% credible interval for $\sigma$ is
+
+```{r, results='hide', message=FALSE}
 quantile(sigma, probs=c(0.025, 0.975))
 ```
+
+$$\left( 0.2582, 0.641 \right)$$
+
+### (d)
+
+| | 95% CI for $\theta$ | 95% CI for $\sigma$ |
+| --- | --- | --- | 
+| Bayesian | $0.29, 0.7525$ | $0.2582, 0.641$ |
+| Frequentist | $0.3021, 0.7495$ | $0.2494, 0.5978$ |
+
+These look very similar to me. It seems that in this case using either 
+strategy leads to largely the same result. The only major difference seems 
+to be in the upper end of the bayesian posterior distribution for $\sigma$ 
+where it captured a longer right tail than did the frequentist approach. 
 
 

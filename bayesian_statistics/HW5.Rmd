@@ -1,0 +1,232 @@
+---
+title: STAT641 - Homework 5
+author: Marcel Gietzmann-Sanders
+---
+
+## Problem 1
+
+To get our credible set we'll need to first find our posterior distribution.
+In our case we're looking at a normal-normal model where:
+
+$$y_i \sim N(\theta, \sigma_0^2)$$
+
+with a prior distribution:
+
+$$\theta \sim N(\mu_0, \tau_0^2)$$
+
+From the derivation we've gone over in class we know that the posterior distribution is simply:
+
+$$P(\theta | y) \sim N(\mu_n, \tau_n^2)$$
+
+where
+
+$$\tau_n^2=\left( \frac{1}{\tau_0^2} + \frac{n}{\sigma_0^2}\right)^{-1}$$
+
+$$\mu_n = \frac{\mu_0/\tau_0^2+n\bar{y}/\sigma_0^2}{1/\tau_0^2+n/\sigma_0^2}$$
+
+### (a) 
+
+In this case we have:
+
+$$\mu_n=\frac{10/1.69+40(19.8)/9}{1/1.69+40/9}\approx 18.65$$
+
+$$\tau_n^2=(1/1.69+40/9)^{-1}=\approx 0.2$$
+
+Therefore our 95\% credible set is:
+
+$$18.65 \pm 1.96 \sqrt{0.2} \approx \left[ 17.77, 19.53 \right]$$
+
+which does not in fact contain $\bar{y}=19.8$.
+
+### (b) 
+
+In this case we have:
+
+$$\mu_n=\frac{10/1.69+80(19.8)/9}{1/1.69+80/9}\approx 19.19$$
+
+$$\tau_n^2=(1/1.69+80/9)^{-1}=\approx 0.11$$
+
+Therefore our 95\% credible set is:
+
+$$19.19 \pm 1.96 \sqrt{0.11} \approx \left[ 18.54, 19.84 \right]$$
+
+which does contain $\bar{y}=19.8$.
+
+\newpage 
+## Problem 2
+
+### (a)
+
+Our posterior distribution is going to be given by:
+
+$$P(\theta | y) \propto L(y | \theta) P(\theta) $$
+
+$$P(\theta | y) \propto {n \choose y}\theta^{y}(1-\theta)^{n-y}\frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\theta^{a-1}(1-\theta)^{b-1}$$
+
+$$\propto \theta^{y+a-1}(1-\theta)^{n+b-y-1}$$
+
+Which is just a Beta distribution where $a^*=y+a$ and $b^*=n+b-y$
+
+```{r, echo=FALSE}
+p = seq(0, 1, length=1000)
+plot(
+    p, 
+    dbeta(p, 1/2, 1/2), 
+    type='l', 
+    xlab='theta', 
+    ylab='p(theta)',
+    col="orange",
+    ylim=c(0, 10)
+)
+lines(
+    p, 
+    dbeta(p, 1/2 + 3, 1/2 + 5 - 3),
+    col='blue'
+)
+lines(
+    p, 
+    dbeta(p, 1/2 + 6, 1/2 + 10 - 6),
+    col='purple'
+)
+lines(
+    p, 
+    dbeta(p, 1/2 + 30, 1/2 + 50 - 30),
+    col='black'
+)
+legend(0.1, 9, legend=c("Prior", "Posterior (n=5,y=3)", "Posterior (n=10,y=6)", "Posterior (n=50,y=30)"),  
+       fill = c("orange","blue", "purple", "black") 
+)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+a = 1/2 + 30
+b = 1/2 + 50 - 30
+(c(qbeta(0.025, a, b), qbeta(0.975, a, b)))
+qbeta(0.975, a, b) - qbeta(0.025, a, b)
+```
+
+| Case | 95% CS | 95% CS Width |
+| --- | --- | --- |
+|Prior | $\left[ 0.0015, 0.9985 \right]$ | 0.9969 |
+| Posterior $n=5,y=3$| $\left[ 0.2094, 0.9056 \right]$ | 0.6962 |
+| Posterior $n=10,y=6$| $\left[ 0.3037, 0.8469 \right]$ | 0.5433 |
+| Posterior $n=50,y=30$| $\left[ 0.4617, 0.727 \right]$ | 0.2653 |
+
+### (b)
+
+```{r, echo=FALSE}
+p = seq(0, 1, length=1000)
+plot(
+    p, 
+    dbeta(p, 1, 1), 
+    type='l', 
+    xlab='theta', 
+    ylab='p(theta)',
+    col="orange",
+    ylim=c(0, 10)
+)
+lines(
+    p, 
+    dbeta(p, 1 + 3, 1 + 5 - 3),
+    col='blue'
+)
+lines(
+    p, 
+    dbeta(p, 1 + 6, 1 + 10 - 6),
+    col='purple'
+)
+lines(
+    p, 
+    dbeta(p, 1 + 30, 1 + 50 - 30),
+    col='black'
+)
+legend(0.1, 9, legend=c("Prior", "Posterior (n=5,y=3)", "Posterior (n=10,y=6)", "Posterior (n=50,y=30)"),  
+       fill = c("orange","blue", "purple", "black") 
+)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+a = 1
+b = 1
+(c(qbeta(0.025, a, b), qbeta(0.975, a, b)))
+qbeta(0.975, a, b) - qbeta(0.025, a, b)
+```
+
+| Case | 95% CS | 95% CS Width |
+| --- | --- | --- |
+|Prior | $\left[ 0.025, 0.975 \right]$ | 0.95 |
+| Posterior $n=5,y=3$| $\left[ 0.2228, 0.8819 \right]$ | 0.6591 |
+| Posterior $n=10,y=6$| $\left[ 0.3079, 0.8325 \right]$ | 0.5246 |
+| Posterior $n=50,y=30$| $\left[ 0.4611, 0.7242 \right]$ | 0.263 |
+
+\newpage 
+### (c)
+
+| Case | 95% CS (Jeffreys’) | 95% CS (Uniform) | 95% CS Width (Jeffreys’) | 95% CS Width (Uniform)
+| --- | --- | --- | --- | --- |
+|Prior | $\left[ 0.0015, 0.9985 \right]$ | $\left[ 0.025, 0.975 \right]$ | 0.9969 | 0.95 |
+| Posterior $n=5,y=3$| $\left[ 0.2094, 0.9056 \right]$  | $\left[ 0.2228, 0.8819 \right]$ | 0.6962 | 0.6591 |
+| Posterior $n=10,y=6$| $\left[ 0.3037, 0.8469 \right]$ | $\left[ 0.3079, 0.8325 \right]$ | 0.5433 | 0.5246 |
+| Posterior $n=50,y=30$| $\left[ 0.4617, 0.727 \right]$ | $\left[ 0.4611, 0.7242 \right]$ | 0.2653 | 0.263 |
+
+For the first two posterior distributions ($n=5,y=3$ and $n=10,y=6$) there are clear differences 
+specifically in the width of these distributions with the Jeffreys’ prior resulting in a wider 
+95% credible set ($\approx 0.7$ vs $\approx0.66$ in the first case and $\approx 0.54$ vs $\approx 0.52$
+in the second). The middle of these CS's in both cases, however, are very similar ($\approx 0.55$ in the first
+case and $\approx 0.57$ in the second). 
+
+However, as to whether these are vastly different results in terms of CS width I'd have to wager a no.
+The difference in width is $<10\%$ of the widths themselves so it seems like we're getting 
+reasonably similar results. And in the last case $n=50,y=30$ the posterior distributions are nearly
+identical in terms of their CS's and CS widths. 
+
+### (d)
+
+For our two choices of prior distribution the choice doesn't matter. Clearly the CS's and the CS widths 
+are nearly identical (see our table above) and it should be noted that our $a^*$ and $b^*$ parameters
+are dominated by $n$ and $y$ in these cases. However if our original choice of $a$ and $b$ were very different 
+and specifically if one set were quite large, this may not be the case and our choice of prior would matter.  
+
+\newpage 
+## Problem 3
+
+We'll be using the formula:
+
+$$\pi(\theta)\sim \left[ J(\theta) \right]^{1/2}$$
+
+where
+
+$$J(\theta)=-\mathbb{E}\left(\frac{d^2 \log{p(y|\theta)}}{d\theta^2} | \theta \right)$$
+
+In our case:
+
+$$\log{p(y|\theta)}=\log{\frac{e^{-\theta}\theta^y}{y!}}=\log{e^{-\theta}} + \log{\theta^y} - \log{y!}$$
+
+$$=-\theta + y\log{\theta}-\log{y!}$$
+
+Therefore:
+
+$$\frac{d\log{p(y|\theta)}}{d\theta}=-1+y/\theta+0=y/\theta-1$$
+
+and:
+
+$$\frac{d^2\log{p(y|\theta)}}{d\theta^2}=-y/\theta^2$$
+
+So:
+
+$$J(\theta)=-\mathbb{E}\left(\frac{d^2 \log{p(y|\theta)}}{d\theta^2} | \theta \right)=-\mathbb{E}\left( -y/\theta^2 \right) =\mathbb{E}(y)/\theta^2=1/\theta$$
+
+Our prior is therefore:
+
+$$\pi(\theta)=(1/\theta)^{1/2}=\theta^{-1/2}$$
+
+Now if we consider:
+
+$$\int_\epsilon^N \theta^{-1/2}d\theta=2\theta^{1/2}|_\epsilon^N=2N^{1/2}-2\epsilon^{1/2}$$
+
+As $e\rightarrow 0$ and $N \rightarrow \infty$ this integral itself goes to $\infty$. Therefore given the integral of this prior 
+does not equal one (and cannot be normalized to be equal to one) this is not a proper prior. 
+
+
+
+

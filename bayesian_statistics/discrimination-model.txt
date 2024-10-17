@@ -1,0 +1,7 @@
+model{
+    x.A ~ dbin(theta.A, n.A)
+    theta.A ~ dunif(0, 1)
+    x.F ~ dbin(theta.F, n.F)
+    theta.F ~ dunif(0, 1)
+    discrim <- step(theta.F - theta.A - level)
+}

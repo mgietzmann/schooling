@@ -1,0 +1,247 @@
+---
+title: STAT641 - Homework 7
+author: Marcel Gietzmann-Sanders
+---
+
+## Problem 1
+
+Looking for discrimination against applicants on the basis of race is
+always made tricky by the fact that, due to historic reasons, racial 
+identity is usually tied up in differences in socio-economic status and 
+therefore often times education and skill levels as well. So is a company
+hiring on the basis of skill and ending up in a situation where fewer
+people of a specific race are hired less frequently or is discrimination 
+on the basis of race happening? Therefore just saying
+that there is a likely difference (however small) in hiring rates is
+probably unlikely to convince those who are skeptical. However if we find 
+that even when the difference is high the probability of that difference 
+remains high then it becomes more and more difficult to reason away 
+the difference without acknowledging some level of discrimination on the 
+part of the hiring organization. Therefore we are going to run a sensitivity
+over a range of "required" difference levels to assume discrimination. 
+
+To be specific we will have the model:
+
+```
+model{
+    x.A ~ dbin(theta.A, n.A)
+    theta.A ~ dunif(0, 1)
+    x.F ~ dbin(theta.F, n.F)
+    theta.F ~ dunif(0, 1)
+    discrim <- step(theta.F - theta.A - level)
+}
+```
+
+Where `F` is the group discrimination is hypothesized to be working "for" 
+and `A` is the group discrimination is the group it is working "against". 
+With this model we will sweep through `level` and report on the probability of `discrim` 
+for each. By running this in two cases (black as `F` and black as `A`) we will 
+get a sense of the probability of different levels of discrimination against 
+both groups. 
+
+
+```{r}
+library(rjags)
+fit_model = function(x.F, n.F, x.A, n.A, level) {
+    data = list(x.F = x.F, n.F = n.F, x.A = x.A, n.A = n.A, level=level)
+    inits = list(theta.F = 0.5, theta.A = 0.5)
+    fname = "discrimination-model.txt"
+    n.iter = 10000
+    thin = 1
+
+    model = jags.model(
+        file=fname,
+        data=data,
+        inits=inits,
+        n.chains=1,
+        n.adapt=1000,
+        quiet=TRUE
+    )
+    variables = c("discrim", "theta.F", "theta.A")
+    samples = coda.samples(
+        model, variables, n.iter=n.iter, thin=thin
+    )
+}
+```
+
+We'll do an example fit just to check I haven't broken anything. 
+```{r}
+samples = fit_model(
+    41, 80, 14, 30, 0
+)
+
+theta.F = samples[[1]][,"theta.F"]
+theta.A = samples[[1]][,"theta.A"]
+discrim = samples[[1]][,"discrim"]
+
+plot(theta.F)
+
+plot(theta.A)
+```
+
+Reasonably grassy traces for `theta.F` and `theta.A`. Let's see what our
+probability of discrimination is. 
+
+```{r}
+sum(discrim) / length(discrim)
+```
+
+Alright let's run our sensitivity!
+
+```{r}
+probs = c()
+levels = seq(0, 1, 0.1)
+for (level in levels){
+    samples = fit_model(
+        41, 80, 14, 30, level
+    )
+    discrim = samples[[1]][,"discrim"]
+    probs = c(probs, sum(discrim) / length(discrim))
+}
+plot(
+    x=levels,
+    y=probs,
+    type="l",
+    ylab="probability of discrimination > level",
+    xlab="level",
+    main="Probability of Discrimination Against Black Applicants"
+)
+```
+
+```{r}
+probs = c()
+levels = seq(0, 1, 0.1)
+for (level in levels){
+    samples = fit_model(
+        14, 30, 41, 80, level
+    )
+    discrim = samples[[1]][,"discrim"]
+    probs = c(probs, sum(discrim) / length(discrim))
+}
+plot(
+    x=levels,
+    y=probs,
+    type="l",
+    ylab="probability of discrimination > level",
+    xlab="level",
+    main="Probability of Discrimination Against White Applicants"
+)
+```
+
+Alright what do I conclude from this data? While there is a greater than 
+even chance of some level of difference between the proportion of blacks
+hired vs whites hired it seems as if that difference is relatively small as
+the probability of a difference $>0.1$ is $\approx 0.3$ (which is the more
+or less the same as the probability that there is discrimination against
+whites). Therefore I would conclude that there needs to be further 
+investigation into the nature of the rejections so that differences in 
+the skills of applicants can be better understood as a potential confounding
+factor. 
+
+## Problem 2
+
+We fit the models both ways but I will state the case where black applicants 
+are considered those whom the discrimination is "against".
+
+### Statement 1
+
+$$Y_a \sim Binomial(n_a, \theta_a), n_a = 44, \theta_a \sim Uniform(0,1)$$
+$$Y_f \sim Binomial(n_f, \theta_f), n_f = 80, \theta_f \sim Uniform(0,1)$$
+
+### Statement 2
+
+Given the assumed independence:
+
+$$L(\theta_a, \theta_f) = {n_a \choose y_a}\theta_a^{y_a}(1-\theta_a)^{n_a-y_a} \bullet {n_f \choose y_f}\theta_f^{y_f}(1-\theta_f)^{n_f-y_f} $$
+
+$$\pi(\theta_a, \theta_f) = 1$$
+
+for $\theta_a \in [0, 1]$ and $\theta_f \in [0, 1]$.
+
+Therefore:
+
+$$p(\theta_a, \theta_f | y_a, y_f)=L(\theta_a, \theta_f) \pi(\theta_a, \theta_f) \propto \theta_a^{y_a}(1-\theta_a)^{n_a-y_a}\theta_f^{y_f}(1-\theta_f)^{n_f-y_f}$$
+
+## Problem 3
+
+### (a)
+
+If we have 3 different people playing a game where a die is rolled and a roll higher than 
+a specific value designates a success for the player but lower than that roll designates 
+a loss then it would make sense to assume that the $\theta$ guiding each persons rolls 
+would be the same. Yet each person may roll a different number of times depending on what 
+happened in the game thereby leading to individual $n_i$. 
+
+### (b) 
+
+If instead everyone brought their own personal die then we could no longer just assume 
+the $\theta$ are all the same. Note that in both of these we're assuming that these 
+die are either cheap or worn and therefore are not necessarily well balanced. 
+
+## Problem 4
+
+```{r}
+metropolis = function(p, start_x, num_samples, sigma) {
+    samples = c()
+    num_accepted = 0
+    for (i in seq(1, num_samples)) {
+        proposal_x = rnorm(1, mean=start_x, sd=sigma)
+        prob_start = p(start_x)
+        prob_proposal = p(proposal_x)
+        if (prob_proposal >= prob_start) {
+            num_accepted = num_accepted + 1
+            samples = c(samples, proposal_x)
+            start_x = proposal_x
+        } else {
+            R = prob_proposal / prob_start 
+            coin_flip = rbinom(1, 1, R)
+            if (coin_flip == 1) {
+                num_accepted = num_accepted + 1
+                samples = c(samples, proposal_x)
+                start_x = proposal_x
+            } else {
+                samples = c(samples, start_x)
+            }
+        }
+    }
+    return(list(num_accepted=num_accepted, samples=samples))
+}
+
+p = function(x) {
+    if (x <= 0) {
+        return(0)
+    }
+    if (x >= pi/2) {
+        return(0)
+    }
+    return(cos(x))
+}
+
+N = 5000
+results = metropolis(p, pi/4, N, 1)
+results$num_accepted / N
+```
+
+```{r}
+plot(
+    x=seq(1, N),
+    y=results$samples,
+    type="l",
+    ylab="sample",
+    xlab="step",
+    main="Traceplot of Samples over Time"
+)
+```
+
+```{r}
+inv = integrate(p, 0, pi/2)$value
+hist(results$samples, prob=TRUE, main="", xlab="theta")
+curve(cos(x)/inv, add=TRUE, lwd=2)
+```
+
+In the end here we had a $\sigma=1$ and an acceptance rate of $\approx 0.4$. 
+
+
+
+
+

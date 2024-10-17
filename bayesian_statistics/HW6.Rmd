@@ -1,0 +1,274 @@
+---
+title: STAT641 - Homework 6
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+rejection_sampling = function(M, p, dg, rg, N) {
+    samples = c()
+    num_samples = 0
+    num_rejected = 0
+    while (length(samples) < N) {
+        num_samples = num_samples + 1
+        # sample a theta from g
+        theta = rg()
+        # flip a coin
+        R = p(theta) / (dg(theta) * M)
+        success = rbinom(1, 1, R)
+        if (success == 1) {
+            samples = append(samples, theta)
+        } else {
+            num_rejected = num_rejected + 1
+        }
+    }
+    return(list(samples = samples, num_samples = num_samples, num_rejected=num_rejected))
+}
+```
+
+## Problem 1
+
+### (a)
+
+```{r, fig.height = 2.5, fig.width = 6, fig.align = "center"}
+theta = seq(0, 1, 0.01)
+q = 0.05 + (theta - 0.5) ^ 2
+par(mar = c(4,4,1,1))
+plot(x=theta, y=q, type="l")
+```
+
+### (b)
+
+We want 
+
+$$p(\theta)=kq(\theta)$$
+
+s.t. 
+
+$$\int_0^1 p(\theta)d\theta = 1$$
+
+This means we want:
+
+$$k=\left(\int_0^1 q(\theta)d\theta \right)^{-1}$$
+
+$$\int q(\theta)d\theta=\int (0.05 + (\theta-0.5)^2)d\theta=0.05\theta + \frac{1}{3}(\theta-0.5)^3 + C$$
+
+$$\int_0^1 q(\theta)d\theta = 0.05(1) + \frac{1}{3}(1-0.5)^3 - 0.05(0) - \frac{1}{3}(0-0.5)^3=\frac{1}{20}+\frac{2}{3}\left(\frac{1}{2}\right)^3$$
+$$=\frac{1}{20}+\frac{1}{12}=\frac{2}{15}$$
+
+Therefore:
+
+$$k=\frac{15}{2}$$
+
+```{r, fig.height = 2.5, fig.width = 6, fig.align = "center"}
+theta = seq(0, 1, 0.01)
+func_p = function(theta) {
+    return((0.05 + (theta - 0.5) ^ 2) * 15 / 2)
+}
+p = func_p(theta)
+par(mar = c(4,4,1,1))
+plot(x=theta, y=p,type="l")
+```
+
+### (c) 
+
+A $Beta(1,1)$ distribution is just the uniform distribution over $[0,1]$. This means that
+
+$$g(\theta)\sim Beta(1, 1)$$
+
+$$g(\theta) = 1, \theta \in [0, 1] $$
+
+Therefore for:
+
+$$\frac{p(\theta)}{g(\theta)}\leq M$$
+
+we require that $M=\max{p(\theta)}$. Given our $p(\theta)$ is centered at 0.5 and is a 
+upward parabola the maximums will be at the edges of $\theta$'s range. I.e.
+
+$$M=\frac{15}{2}\left( 0.05 + (0-0.5)^2\right)=\frac{9}{4}$$
+
+```{r, fig.height = 3, fig.width = 6, fig.align = "center"}
+M = 9/4
+dg = function(theta) {
+    return(1)
+}
+rg = function() {
+    return(rbeta(1, 1, 1))
+}
+
+results = rejection_sampling(M, func_p, dg, rg, 10000)
+par(mar = c(4,4,1,1))
+hist(results$samples, prob=TRUE, xlab="theta", main="")
+lines(x=theta, y=p, col="red")
+```
+
+
+\newpage 
+
+The fraction of samples thrown away is just over 55%. 
+
+```{r}
+results$num_rejected / results$num_samples
+```
+
+### (d)
+
+The mean is $\approx 0.5$ and the variance is $\approx 0.125$.
+
+```{r}
+(mean(results$samples))
+(var(results$samples))
+```
+
+### (e)
+
+In this case $g\sim Beta(0.5,0.5)$ which presents us with a much trickier problem 
+for finding $M$. 
+
+```{r, fig.height = 2.5, fig.width = 6, fig.align = "center"}
+par(mar = c(4,4,1,1))
+plot(x=theta, y=dbeta(theta, 0.5, 0.5), type="l")
+```
+
+What we require is that:
+
+$$\frac{p(\theta)}{g(\theta)}\leq M$$
+
+\newpage
+
+So graphing this ratio we find:
+
+```{r, fig.height = 2.5, fig.width = 6, fig.align = "center"}
+par(mar = c(4,4,1,1))
+ratio = func_p(theta) / dbeta(theta, 0.5, 0.5)
+plot(x=theta,y=ratio,type="l")
+```
+
+This ratio has a clear maximum value so let's go ahead and zoom in on one of those peaks.
+
+```{r, fig.height = 2.5, fig.width = 6, fig.align = "center"}
+zoom_theta = seq(0, 0.2, 0.0001)
+zoom_ratio = func_p(zoom_theta) / dbeta(zoom_theta, 0.5, 0.5)
+par(mar = c(4,4,1,1))
+plot(x=zoom_theta,y=zoom_ratio,type="l", xlab="theta", ylab="ratio")
+```
+
+The maximum here is simply:
+
+```{r}
+max(ratio)
+```
+
+$M=1.5$ should do! 
+
+\newpage
+
+```{r}
+M = 1.5
+dg = function(theta) {
+    return(dbeta(theta, 0.5, 0.5))
+}
+rg = function() {
+    return(rbeta(1, 0.5, 0.5))
+}
+
+results = rejection_sampling(M, func_p, dg, rg, 10000)
+```
+
+```{r, fig.height = 3, fig.width = 6, fig.align = "center"}
+par(mar = c(4,4,1,1))
+hist(results$samples, prob=TRUE, xlab="theta", main="")
+lines(x=theta, y=p, col="red")
+```
+
+The fraction of samples thrown away is just over 33%. 
+
+```{r}
+results$num_rejected / results$num_samples
+```
+
+And once again the mean is $\approx 0.5$ and the variance is $\approx 0.125$.
+
+```{r}
+(mean(results$samples))
+(var(results$samples))
+```
+
+### (f)
+
+I'd say the second blanketing function $g(\theta)\sim Beta(0.5, 0.5)$ was better
+just because we reject far fewer samples and therefore require less compute to get
+the same number of accepted samples. 
+
+## Problem 2
+
+### (a)
+
+$$q(\theta) = |\sin(\theta)|e^{-\theta/4}, \theta\geq 0$$
+
+```{r, fig.height = 3, fig.width = 6, fig.align = "center"}
+par(mar = c(4,4,1,1))
+func_q = function(theta) {
+    abs(sin(theta)) * exp(-theta / 4)
+}
+theta = seq(0, 25, 0.01)
+q = func_q(theta)
+plot(x=theta,y=q,type="l")
+```
+
+### (b) 
+
+We'll be using an exponential distribution as our blanketing function. I.e. 
+
+$$g(\theta) = \lambda e^{-\lambda \theta}$$
+
+Now we can think of our $q$ as being a $\sin$ function 
+multiplied by an exponential envelope. Therefore we want our $\lambda$ to give us this same 
+envelope.  
+
+$$g(\theta) = \frac{1}{4} e^{- \theta /4}$$
+
+So now we have:
+
+$$\frac{q(\theta)}{g(\theta)}=\frac{|\sin(\theta)|e^{-\theta/4}}{(1/4)e^{- \theta /4}}=4|\sin(\theta)|\leq M$$
+
+Which clearly means we'll choose $M=4$ as the maximum magnitude of $\sin$ is just 1.
+\newpage
+```{r}
+M = 4
+dg = function(theta) {
+    return(dexp(theta, 1/4))
+}
+rg = function() {
+    return(rexp(1, 1/4))
+}
+
+results = rejection_sampling(M, func_q, dg, rg, 10000)
+```
+
+### (c)
+
+```{r, fig.height = 3, fig.width = 6, fig.align = "center"}
+theta = seq(min(results$samples), max(results$samples), 0.01)
+q = func_q(theta)
+par(mar=c(5, 4, 4, 6) + 0.1)
+hist(results$samples, prob=TRUE, xlab="theta", main="", breaks=100)
+par(new=TRUE)
+plot(x=theta, y=q, type="l", axes=FALSE, col="red")
+axis(4, col="red",col.axis="red",las=1)
+```
+
+The proportion of rejected samples is roughly 37%:
+
+```{r}
+results$num_rejected / results$num_samples
+```
+
+
+### (d) 
+
+And here the mean is $\approx 4.1$ and the variance is $\approx 16$.
+
+```{r}
+(mean(results$samples))
+(var(results$samples))
+```
