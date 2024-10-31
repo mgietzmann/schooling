@@ -1,0 +1,142 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[super]{nth}
+\usepackage{amsthm}
+\usepackage{bm}
+\newtheorem{theorem}{Theorem}
+\newtheorem{objective}{Objective}
+\newtheorem{model}{Model}
+
+\usepackage[authoryear]{natbib}
+
+
+\makeatletter
+\renewcommand{\maketitle}{
+\begin{center}
+
+\pagestyle{empty}
+
+{\Large \bf \@title\par}
+\vspace{1cm}
+
+{\Large \bf (Proposal) \par}
+\vspace{1cm}
+
+{\LARGE Marcel Gietzmann-Sanders}\\[1cm]
+
+STAT641 - Bayesian Statistics \\
+University of Alaska Fairbanks
+
+
+\end{center}
+}\makeatother
+
+
+\title{Implementing a BYM Model in Stan to Fit Boston Housing Price Data}
+
+\date{2024}
+\setcounter{tocdepth}{2}
+\begin{document}
+\maketitle
+
+\section{In Short}
+
+My Master's research is centered around understanding spatial movement of 
+Chinook salmon in the Gulf of Alaska. As such I thought it would be interesting
+to look into a spatial Bayesian model for my project. Specifically I would like 
+to follow in the footsteps of a paper that implemented the Besag York Mollie (BYM)
+model in Stan (\cite{bymstan}) and then apply that to a housing dataset about 
+Boston, MA where I live (\cite{book}). My project report would be organized according
+to the following outline:
+
+\begin{enumerate}
+\item Explain the BYM model
+\item Showcase an implementation in Stan
+\item Introduce the dataset and the question - housing price as a function of crime rates and number of bedrooms
+\item Fit a BYM model and report on the results
+\end{enumerate}
+
+\newpage
+
+\section{Brief on the Besag York Mollie Model}
+
+The BYM model deals with modeling the distribution of a specific outcome across a series 
+of distinct spatial units/areas given some set of covariates $\bm{x_i}$ where $i$ indexes
+the spatial unit in question. 
+
+If, as in the Boston housing prices example, we assume that our observations per unit $Y_i$ are given by:
+
+$$Y_i \sim N(\mu_i, \sigma^2)$$
+
+Then the BYM model is:
+
+$$\mu_i = \eta + \bm{x_i\beta} + \phi_i + \theta_i$$
+
+where $\eta$ is our overall intercept, $\beta$ represents our regression coefficients, 
+$\phi_i$ is a spatial random variable
+and $\theta_i$ is just a normal non-spatial random variable.
+
+The priors for $\eta$, $\bm{\beta}$, and $\bm{\theta}$ are all assumed to be normal. Part of my project will be determining what I would like to use as a prior on $\sigma^2$. The spatial term $\phi_i$, however, gets a tad more complicated. 
+
+Each spatial interaction term $\phi_i$ is modeled as conditional on the other terms as:
+
+$$\phi_i | \phi_j \sim N\left(\sum_j w_{ij}\phi_j, \sigma^2  \right), i\neq j$$
+
+A key result that Besag proved (\cite{besag}) is that the joint distribution $\bm{\phi}$ ends up being multivariate normal random variable centered at 0
+
+$$\bm{\phi}\sim N(0, Q^{-1})$$
+
+where $Q=D(I-\alpha A)$ where $D$ is a diagonal "neighbors" matrix (each element on the diagonal is the number of neighbors unit $i$ has), $A$ is an adjacency matrix where if $i,j$ are neighbors then the $i,j$ element is 1, and $\alpha$ lets us control spatial dependence. In our case, as we will be following the stan implementation from the paper (\cite{bymstan}) we will be setting $\alpha=1$. 
+
+\newpage
+
+\section{Brief on the Data}
+
+This data comes from the R package spData (\cite{spdata}) and contains information on housing in 
+506 Boston census tracts. What we'll be interested in for our study (which will more or less follow (\cite{book})) is the median housing price (Fig. \ref{fig:prices}), crime rate (Fig. \ref{fig:crime}), and average number of rooms per dwelling (Fig. \ref{fig:rooms}) per tract.  
+
+\begin{figure}[h!] 
+  \includegraphics[width=\linewidth]{log_median_value.png}
+  \caption{Log Median Housing Price}
+  \medskip
+	\small
+	The logarithm of the median house value (in \$1000USD) by census tract in the Greater Boston area.
+  \label{fig:prices}
+\end{figure}
+
+What we will be interested in understanding is the degree to which crime rates and number of rooms per dwelling affect housing prices in the Greater Boston area. I.e., we are specifically interested in the $\beta$ component of our BYM model.
+
+\begin{figure}[h!] 
+  \includegraphics[width=\linewidth]{value_v_crime.png}
+  \caption{Value vs Crime Rate}
+  \medskip
+	\small
+	The logarithm of the median house value (in \$1000USD) by census tract vs per capita crime rate.
+  \label{fig:crime}
+\end{figure}
+
+
+\begin{figure}[h!] 
+  \includegraphics[width=\linewidth]{value_v_rooms.png}
+  \caption{Value vs Rooms}
+  \medskip
+	\small
+	The logarithm of the median house value (in \$1000USD) by census tract vs average rooms per dwelling.
+  \label{fig:rooms}
+\end{figure}
+\newpage 
+
+
+
+
+
+
+
+
+\bibliographystyle{apalike}
+\bibliography{reference}
+\end{document}

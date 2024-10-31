@@ -1,0 +1,34 @@
+---
+title: STAT641 - Project Proposal
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+library(sf)
+library(spData)
+library(mapview)
+map <- st_read(system.file("shapes/boston_tracts.shp",
+               package = "spData"), quiet = TRUE)
+map$log_median_value <- log(map$MEDV)
+mapview(map, zcol = "log_median_value")
+```
+
+```{r}
+plot(
+    x=map$CRIM,
+    y=map$log_median_value,
+    xlab="Crime Rate",
+    ylab="Log Median Value",
+    main="Value v Crime Rate"
+)
+```
+
+```{r}
+plot(
+    x=map$RM,
+    y=map$log_median_value,
+    xlab="Rooms per Dwelling",
+    ylab="Log Median Value",
+    main="Value v Rooms"
+)
+```

@@ -1,0 +1,244 @@
+---
+title: STAT641 - Homework 9
+author: Marcel Gietzmann-Sanders
+---
+
+## Problem 1
+
+### (a)
+
+#### Stating the Model
+
+We will use the following model:
+
+$$\vec{y} \sim Multinomial(n, \vec{\theta})$$
+$$\vec{\theta} \sim Dirichlet(\vec{\alpha})$$
+
+where $\vec{\alpha}=(1, 1, 1, 1, 1, 1)$ and $n=50$. 
+
+Stated more explicitly:
+
+$$p(\vec{\theta} | \vec{y}) \propto L(\vec{y}|\vec{\theta})\pi(\vec{\theta})$$
+
+where 
+
+$$L(\vec{y}|\vec{\theta}) = {n \choose \vec{y}}\prod_i \theta_i^{y_i}$$
+
+$$\pi(\vec{\theta})=\frac{\Gamma\left(\sum_i \alpha_i\right)}{\prod_i \Gamma(\alpha_i)}\prod_i \theta_i^{\alpha_i - 1}$$
+
+Therefore we have:
+
+$$p(\vec{\theta} | \vec{y}) \propto {n \choose \vec{y}}\prod_i \theta_i^{y_i} \frac{\Gamma\left(\sum_i \alpha_i\right)}{\prod_i \Gamma(\alpha_i)}\prod_i \theta_i^{\alpha_i - 1}$$
+$$\propto \prod_i \theta_i^{y_i + \alpha_i - 1}= \prod_i \theta_i^{y_i}$$
+
+In our case because $\alpha_i = 1$
+
+#### Fitting the Model
+
+```
+model
+{
+    y[1:K] ~ dmulti(theta[], N)
+    theta[1:K] ~ ddirch(alpha[])
+}
+```
+
+```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
+library(rjags)
+observations = c(14, 7, 13, 6, 5, 5)
+data = list(
+    y=observations, 
+    alpha=c(1, 1, 1, 1, 1, 1),
+    N=50, K=6
+)
+inits = list(
+    theta=c(1/6, 1/6, 1/6, 1/6, 1/6, 1/6)
+)
+fname = "hw9_multin.txt"
+n.iter = 10000
+thin = 1
+
+model = jags.model(
+    file=fname,
+    data=data,
+    inits=inits,
+    n.chains=1,
+    n.adapt=1000,
+    quiet=TRUE
+)
+variables = c("theta")
+samples = coda.samples(
+    model, variables, n.iter=n.iter, thin=thin
+)
+```
+
+```{r}
+plot(samples)
+```
+
+### (b) 
+
+```{r}
+summary(samples)
+```
+
+It looks like the die is mostly likely to land on a 1 or 3 followed by a 2 and then least likely to 
+land on a 5 or 6. Definitely doesn't seem like this die is even at all. 
+
+```{r}
+effectiveSize(samples)
+```
+
+This model did really well! Our effective sample size is pretty much as 
+good as it can get. 
+
+### (c) 
+
+```{r}
+library(gtools)
+prior_samples = rdirichlet(10000, c(1, 1, 1, 1, 1, 1))
+within_range = matrix(0, 6, 6)
+for (i in 1:10000) {
+    sample = prior_samples[i,1:6]
+    for (j in 1:6) {
+        within_range[j, j] = within_range[j, j] + 1
+        for (k in 1:6) {
+            if (k > j && (abs(sample[k] - sample[j]) < 0.05)) {
+                within_range[k, j] = within_range[k, j] + 1
+                within_range[j, k] = within_range[k, j] + 1
+            }
+        }
+    }
+}
+(within_range = within_range / 10000)
+```
+
+### (d)
+
+```{r}
+within_range = matrix(0, 6, 6)
+for (i in 1:10000) {
+    sample = samples[[1]][1,]
+    for (j in 1:6) {
+        within_range[j, j] = within_range[j, j] + 1
+        for (k in 1:6) {
+            if (k > j && (abs(sample[k] - sample[j]) < 0.05)) {
+                within_range[k, j] = within_range[k, j] + 1
+                within_range[j, k] = within_range[k, j] + 1
+            }
+        }
+    }
+}
+(within_range = within_range / 10000)
+```
+
+## Problem 2
+
+### (a)
+
+The frechet distribution has a pdf of:
+
+$$p(y)= \frac{\lambda}{\sigma}\left(\frac{y-\mu}{\sigma}\right)^{-1-\lambda}e^{-\left( \frac{y-\mu}{\sigma}\right)^{-\lambda}}$$
+
+Now the frechet distribution gets its highest peak in the pdf when 
+$\lambda$ is high and $\sigma$ is low. $\mu$ just moves the distribution 
+horizontally. We can use this to calculate our $k$. 
+
+```
+model
+{
+    for (i in 1:N) {
+        ones[i] ~ dbern(theta[i])
+        theta[i] = ifelse(
+            y[i] <= mu,
+            0,
+            (
+                (lambda / sigma) * ((y[i] - mu) / sigma) ^ (-1 - lambda)
+                * exp(-((y[i] - mu) / sigma) ^ (-lambda))
+            ) / k
+        )
+    }
+    max_lambda = 20
+    min_sigma = 0.1
+    mode = min_sigma * (max_lambda / (1 + max_lambda)) ^ (1 / max_lambda)
+    k = (
+        (max_lambda / min_sigma) * ((mode) / min_sigma) ^ (-1 - max_lambda)
+        * exp(-((mode) / min_sigma) ^ (-max_lambda))
+    ) + 0.1
+    mu ~ dunif(-10, 10)
+    sigma ~ dunif(min_sigma, 20)
+    lambda ~ dunif(0.1, max_lambda)
+}
+```
+
+
+```{r}
+library(extraDistr)
+set.seed(1232123)
+lambda = 1
+mu = 5
+sigma = 2
+N = 50
+y = rfrechet(N, lambda, mu, sigma)
+```
+
+```{r}
+library(rjags)
+ones = rep(1,N)
+data = list(
+    y=y, 
+    N=N,
+    ones=ones
+)
+inits = list(
+    list(lambda=3,sigma=3,mu=3),
+    list(lambda=10,sigma=0.5,mu=-3),
+    list(lambda=0.5,sigma=10,mu=0)
+)
+fname = "hw9_ones.txt"
+n.iter = 10000
+thin = 1
+
+model = jags.model(
+    file=fname,
+    data=data,
+    inits=inits,
+    n.chains=3,
+    n.adapt=1000,
+    quiet=TRUE
+)
+variables = c("lambda", "mu", "sigma")
+samples = coda.samples(
+    model, variables, n.iter=n.iter, thin=thin
+)
+```
+
+### (b)
+
+```{r}
+plot(samples)
+```
+
+### (c)
+
+```{r}
+gelman.plot(samples)
+```
+
+### (d)
+
+```{r}
+summary(samples)
+```
+
+### (e)
+
+```{r}
+hist(y, prob=TRUE, main="", xlab="y",ylim=c(0, 0.3))
+curve(dfrechet(x, lambda, mu, sigma), add=TRUE, lwd=2, col="blue")
+curve(dfrechet(x, mean(samples[[1]][,"lambda"]), mean(samples[[1]][,"mu"]), mean(samples[[1]][,"sigma"])), add=TRUE, lwd=2, col="orange")
+```
+
+Here orange is our modeled distribution (based on means from the posterior) and blue is the distribution we were trying to model. 
+
+

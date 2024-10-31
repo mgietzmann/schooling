@@ -1,0 +1,5 @@
+model
+{
+    y[1:K] ~ dmulti(theta[], N)
+    theta[1:K] ~ ddirch(alpha[])
+}

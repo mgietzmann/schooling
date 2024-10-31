@@ -1,0 +1,24 @@
+model
+{
+    for (i in 1:N) {
+        ones[i] ~ dbern(theta[i])
+        theta[i] = ifelse(
+            y[i] <= mu,
+            0,
+            (
+                (lambda / sigma) * ((y[i] - mu) / sigma) ^ (-1 - lambda)
+                * exp(-((y[i] - mu) / sigma) ^ (-lambda))
+            ) / k
+        )
+    }
+    max_lambda = 20
+    min_sigma = 0.1
+    mode = min_sigma * (max_lambda / (1 + max_lambda)) ^ (1 / max_lambda)
+    k = (
+        (max_lambda / min_sigma) * ((mode) / min_sigma) ^ (-1 - max_lambda)
+        * exp(-((mode) / min_sigma) ^ (-max_lambda))
+    ) + 0.1
+    mu ~ dunif(-10, 10)
+    sigma ~ dunif(min_sigma, 20)
+    lambda ~ dunif(0.1, max_lambda)
+}
