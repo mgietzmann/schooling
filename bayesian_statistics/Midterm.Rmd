@@ -1,0 +1,134 @@
+---
+title: STAT641 - Exam 2
+author: Marcel Gietzmann-Sanders
+---
+
+## Problem 1
+
+### (a) 
+
+```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
+data = c(
+    17,16,16,16,17,  17,18,14,15,10,  15,12,11,13,19,  14, 9,17,17,27,
+    20,23,14,16,26,  24,22,26,22,24,  28,16,23,23,21,  28,28,23,21,25,
+    24,25,22,25,33,  27,17,15,20,19,  26,25,28,23,21,  27,25,28,20,26
+)
+N = length(data)
+plot(x=seq(1,N), y=data, xlab="day", ylab="spam emails", main="")
+```
+
+Visual inspection definitely leads one to believe a change happened
+sometime between day 18 and 20. 
+
+### (b) 
+
+#### Statement 1
+
+$$Y_i|\vec{\lambda} \sim Poisson(\lambda_1), i \in [1, 18]$$
+$$Y_i|\vec{\lambda} \sim Poisson(\lambda_2), i \in [19, 60]$$
+$$\lambda_1 \sim Exponential(1)$$
+$$\lambda_2 \sim Exponential(1)$$
+
+#### Statement 2
+
+In our case $\vec{\theta} = \vec{\lambda}$
+
+$$p(\vec{\lambda} | data) \propto L(\vec{\lambda})\pi(\vec{\lambda})$$
+
+$$L(\vec{\lambda}) = \left(\prod_{i=1}^{18} \frac{\lambda_1^{y_i} e^{-\lambda_1}}{y_i!}\right)\left(\prod_{i=19}^{60} \frac{\lambda_2^{y_i} e^{-\lambda_2}}{y_i!}\right)\propto \lambda_1^{\sum_{i=1}^{18} y_i}e^{-18\lambda_1} \lambda_2^{\sum_{i=19}^{60} y_i}e^{-42\lambda_2}$$
+
+$$\pi(\vec{\lambda}) = e^{-\lambda_1}e^{-\lambda_2}$$
+
+Therefore:
+
+$$p(\vec{\lambda} | data) \propto \lambda_1^{\sum_{i=1}^{18} y_i}e^{-19\lambda_1} \lambda_2^{\sum_{i=19}^{60} y_i}e^{-43\lambda_2}$$
+
+### (c) 
+
+```
+model
+{
+    for (i in 1:N) {
+        y[i] ~ dpois(lambda[idx[i]])
+        idx[i] = 1 + step(i - K - 0.5)
+    }
+    lambda[1] ~ dgamma(1, 1)
+    lambda[2] ~ dgamma(1, 1)
+}
+```
+
+```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
+library(rjags)
+data = list(
+    y=data, 
+    N=N, K=18
+)
+inits = list(
+    lambda=c(1, 1)
+)
+fname = "midterm_model_1.txt"
+n.iter = 10000
+thin = 1
+
+model = jags.model(
+    file=fname,
+    data=data,
+    inits=inits,
+    n.chains=1,
+    n.adapt=1000,
+    quiet=TRUE
+)
+variables = c("lambda")
+samples = coda.samples(
+    model, variables, n.iter=n.iter, thin=thin
+)
+```
+
+### (d) 
+
+If $i>K$ then (given these are all integers) $i - K \geq 1$ and therefore 
+$i - K - 0.5>0$ so in this case the `step` function will return a 1 and we'll 
+get `idx[i]=2`. If $i\leq K$ then $i - K \leq 0$ and $i-K-0.5<0$ leaving `step`
+to give us a 0 and `idx[i]=1`.
+
+### (e) 
+```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
+plot(samples)
+```
+
+```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
+library(ggplot2)
+df = data.frame(
+    lambda1=as.numeric(samples[[1]][,"lambda[1]"]),
+    lambda2=as.numeric(samples[[1]][,"lambda[2]"]),
+    iterations=seq(1,n.iter)
+)
+thinned_indices = round(seq(1,n.iter, length=1000))
+ggplot(df[thinned_indices,], aes(x=iterations,y=lambda1)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("lambda1")
+ggplot(df[thinned_indices,], aes(x=iterations,y=lambda2)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("lambda2")
+ggplot(df, aes(lambda1)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=0.25) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("lambda1")
+ggplot(df, aes(lambda2)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=0.25) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("lambda2")
+```
+
+
+```{r, results='hide'}
+(summary(samples))
+effectiveSize(samples)
+```
+
+| Parameter | Mean | SD | 95% CS | MC error | $n_{EFF}$ |
+| --- | --- | --- | --- | --- | --- | 
+| $\lambda_1$ | 14.04 | 0.857 | 12.39, 15.75 | 0.0084 | 10000 |
+| $\lambda_2$ | 22.66 | 0.733 | 21.25, 24.11 | 0.0073 | 10000 | 
+
+Nothing's raising alarm bells about convergence with the high $n_{EFF}$, low MC error,
+and those nice "grassy" traceplots. Given our 95% credible intervals are very well 
+separated between $\lambda_1$ and $\lambda_2$ it seems a change is very likely to have 
+occurred and indeed the spam rates jumped by on average 8-9 emails a day. 
+
+### (f) 
+
+See above. 
+
+
+
