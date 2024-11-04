@@ -1,0 +1,12 @@
+model
+{
+    for (i in 1:N) {
+        y[i] ~ dpois(lambda[idx[i]])
+        idx[i] = 1 + step(i - K - 0.5)
+        punif[i] = 1/N
+    }
+    K ~ dcat(punif[])
+    lambda[1] ~ dgamma(1, 1)
+    lambda[2] ~ dgamma(1, 1)
+    R = lambda[2] / lambda[1]
+}

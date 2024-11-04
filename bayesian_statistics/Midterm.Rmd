@@ -59,7 +59,7 @@ model
 
 ```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
 library(rjags)
-data = list(
+jags_data = list(
     y=data, 
     N=N, K=18
 )
@@ -72,7 +72,7 @@ thin = 1
 
 model = jags.model(
     file=fname,
-    data=data,
+    data=jags_data,
     inits=inits,
     n.chains=1,
     n.adapt=1000,
@@ -92,9 +92,6 @@ get `idx[i]=2`. If $i\leq K$ then $i - K \leq 0$ and $i-K-0.5<0$ leaving `step`
 to give us a 0 and `idx[i]=1`.
 
 ### (e) 
-```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
-plot(samples)
-```
 
 ```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
 library(ggplot2)
@@ -130,5 +127,117 @@ occurred and indeed the spam rates jumped by on average 8-9 emails a day.
 
 See above. 
 
+## Problem 2
 
+### (a) 
 
+#### Statement 1
+
+$$Y_i|\vec{\lambda} \sim Poisson(\lambda_1), i \in [1, K]$$
+$$Y_i|\vec{\lambda} \sim Poisson(\lambda_2), i \in [K+1, 60]$$
+$$\lambda_1 \sim Exponential(1)$$
+$$\lambda_2 \sim Exponential(1)$$
+$$K \sim DiscreteUniform\{1, 2, 3,..., N\}$$
+
+#### Statement 2
+
+$$p(\vec{\lambda}, K | data) \propto L(\vec{\lambda}, K)\pi(\vec{\lambda}, K)$$
+
+$$L(\vec{\lambda}, K) = \left(\prod_{i=1}^{K} \frac{\lambda_1^{y_i} e^{-\lambda_1}}{y_i!}\right)\left(\prod_{i=K+1}^{60} \frac{\lambda_2^{y_i} e^{-\lambda_2}}{y_i!}\right)\propto \lambda_1^{\sum_{i=1}^{K} y_i}e^{-K\lambda_1} \lambda_2^{\sum_{i=K+1}^{60} y_i}e^{-(60-K)\lambda_2}$$
+
+$$\pi(\vec{\lambda}, K) = \frac{1}{N}e^{-\lambda_1}e^{-\lambda_2}$$
+
+Therefore:
+
+$$p(\vec{\lambda}, K | data) \propto \lambda_1^{\sum_{i=1}^{K} y_i}e^{-(K+1)\lambda_1} \lambda_2^{\sum_{i=K+1}^{60} y_i}e^{-(60 - K + 1)\lambda_2}$$
+
+### (b) 
+```
+model
+{
+    for (i in 1:N) {
+        y[i] ~ dpois(lambda[idx[i]])
+        idx[i] = 1 + step(i - K - 0.5)
+        punif[i] = 1/N
+    }
+    K ~ dcat(N)
+    lambda[1] ~ dgamma(1, 1)
+    lambda[2] ~ dgamma(1, 1)
+    R = lambda[2] / lambda[1]
+}
+```
+
+```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
+library(rjags)
+jags_data = list(
+    y=data, 
+    N=N
+)
+inits = list(
+    lambda=c(1, 1)
+)
+fname = "midterm_model_2.txt"
+n.iter = 10000
+thin = 1
+
+model = jags.model(
+    file=fname,
+    data=jags_data,
+    inits=inits,
+    n.chains=1,
+    n.adapt=1000,
+    quiet=TRUE
+)
+variables = c("lambda", "K", "R")
+samples = coda.samples(
+    model, variables, n.iter=n.iter, thin=thin
+)
+```
+
+### (c) 
+
+```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
+library(ggplot2)
+df = data.frame(
+    lambda1=as.numeric(samples[[1]][,"lambda[1]"]),
+    lambda2=as.numeric(samples[[1]][,"lambda[2]"]),
+    K=as.numeric(samples[[1]][,"K"]),
+    R=as.numeric(samples[[1]][,"R"]),
+    iterations=seq(1,n.iter)
+)
+thinned_indices = round(seq(1,n.iter, length=1000))
+ggplot(df[thinned_indices,], aes(x=iterations,y=lambda1)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("lambda1")
+ggplot(df[thinned_indices,], aes(x=iterations,y=lambda2)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("lambda2")
+ggplot(df[thinned_indices,], aes(x=iterations,y=K)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("K")
+ggplot(df[thinned_indices,], aes(x=iterations,y=R)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("R")
+ggplot(df, aes(lambda1)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=0.25) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("lambda1")
+ggplot(df, aes(lambda2)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=0.25) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("lambda2")
+ggplot(df, aes(K)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=1) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("K")
+ggplot(df, aes(R)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=0.05) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("R")
+```
+
+```{r, results='hide'}
+(summary(samples))
+effectiveSize(samples)
+```
+
+| Parameter | Mean | SD | 95% CS | MC error | $n_{EFF}$ |
+| --- | --- | --- | --- | --- | --- | 
+| $\lambda_1$ | 14.15 | 0.888 | 12.47, 15.92 | 0.0095 | 8643 |
+| $\lambda_2$ | 22.69 | 0.74 | 21.26, 24.17 | 0.0074 | 10000 | 
+| $K$ | 18.47 | 1.221 | 17, 23 | 0.014 | 7850 |
+| $R$ | 1.61 | 0.113 | 1.4, 1.84 | 0.0012 | 9564 | 
+
+Once again no real worries about convergence although it is interesting that 
+the effective sample size dropped. Looks like the $K$ guess we had before we pretty
+good what with the mean here being 18.47. 
+
+### (e)
+
+The ratio of spam mail/day before and after the change is on average $1.61$ with a credible 
+set of $1.4, 1.84$. So between 40% and 84% more spam emails after the change. Quite a 
+drastic difference!
+
+### (f)
+
+See above.
