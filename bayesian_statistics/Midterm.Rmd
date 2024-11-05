@@ -241,3 +241,151 @@ drastic difference!
 ### (f)
 
 See above.
+
+## Problem 3
+
+### (a)
+
+
+The frechet distribution has a pdf of:
+
+$$p(y)= \frac{\lambda}{\sigma}\left(\frac{y-\mu}{\sigma}\right)^{-1-\lambda}e^{-\left( \frac{y-\mu}{\sigma}\right)^{-\lambda}}$$
+
+To choose our $k$ we will note that the frechet distribution gets 
+its higher peaks in the pdf when $\lambda$ is high and $\sigma$ is low. 
+$\mu$ just moves the distribution horizontally. Therefore our $k$ can be 
+just a smidge above the value of the distribution at the mode where 
+$\lambda$ is at the high end of our uniform prior and $\sigma$ is at the low end. 
+
+As such our model statement will look like:
+
+```
+model
+{
+    for (i in 1:N) {
+        ones[i] ~ dpois(theta[i])
+        theta[i] = -log(ifelse(
+            y[i] <= mu,
+            0,
+            (
+                (lambda / sigma) * ((y[i] - mu) / sigma) ^ (-1 - lambda)
+                * exp(-((y[i] - mu) / sigma) ^ (-lambda))
+            ) / k
+        ))
+    }
+    max_lambda = 20
+    min_sigma = 0.1
+    mode = min_sigma * (max_lambda / (1 + max_lambda)) ^ (1 / max_lambda)
+    k = (
+        (max_lambda / min_sigma) * ((mode) / min_sigma) ^ (-1 - max_lambda)
+        * exp(-((mode) / min_sigma) ^ (-max_lambda))
+    ) + 0.1
+    mu ~ dunif(-10, 10)
+    sigma ~ dunif(min_sigma, 20)
+    lambda ~ dunif(0.1, max_lambda)
+}
+```
+
+```{r}
+library(extraDistr)
+set.seed(1232123)
+lambda = 1
+mu = 5
+sigma = 2
+N = 50
+y = rfrechet(N, lambda, mu, sigma)
+```
+
+```{r}
+library(rjags)
+ones = rep(1,N)
+data = list(
+    y=y, 
+    N=N,
+    ones=ones
+)
+inits = list(
+    list(lambda=3,sigma=3,mu=3),
+    list(lambda=10,sigma=0.5,mu=-3),
+    list(lambda=0.5,sigma=10,mu=0)
+)
+fname = "midterm_model_zeros.txt"
+n.iter = 10000
+thin = 1
+
+model = jags.model(
+    file=fname,
+    data=data,
+    inits=inits,
+    n.chains=3,
+    n.adapt=1000,
+    quiet=TRUE
+)
+variables = c("lambda", "mu", "sigma")
+samples = coda.samples(
+    model, variables, n.iter=n.iter, thin=thin
+)
+```
+
+### (b)
+
+```{r, fig.height = 4, fig.width = 6, fig.align = "center"}
+library(ggplot2)
+df = data.frame(
+    lambda=as.numeric(samples[[1]][,"lambda"]),
+    mu=as.numeric(samples[[1]][,"mu"]),
+    sigma=as.numeric(samples[[1]][,"sigma"]),
+    iterations=seq(1,n.iter)
+)
+thinned_indices = round(seq(1,n.iter, length=1000))
+ggplot(df[thinned_indices,], aes(x=iterations,y=lambda)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("lambda")
+ggplot(df[thinned_indices,], aes(x=iterations,y=mu)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("mu")
+ggplot(df[thinned_indices,], aes(x=iterations,y=sigma)) +  geom_line() + geom_smooth(se=FALSE) + xlab("iterations") + ylab("sigma")
+ggplot(df, aes(lambda)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=0.25) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("lambda")
+ggplot(df, aes(mu)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=0.25) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("mu")
+ggplot(df, aes(sigma)) + geom_histogram(aes(y=..density.., fill=I("gray"), color=I("black")), binwidth=1) + geom_density(col = "black", lwd=1) + theme_bw() + xlab("sigma")
+```
+
+### (c) 
+
+```{r}
+gelman.plot(samples)
+```
+
+It's wild how many iterations are required before the 97.5% line 
+gets down near to one. For at least 40,000 iterations it's far higher 
+than the $R<1.05$ that we'd like. 
+
+### (d)
+, results='hide'
+```{r}
+summary(samples)
+effectiveSize(samples)
+```
+
+| Parameter | Mean | SD | 95% CS | MC error | $n_{EFF}$ |
+| --- | --- | --- | --- | --- | --- |
+| $\lambda$ | 2.15 | 0.96 | 1.09, 4.81 | 0.036 |  1054 |
+| $\mu$ | 3.4 | 2.01 | -2.3, 5.22 | 0.084 | 869 | 
+| $\sigma$ | 3.85 | 2.14 | 1.68, 9.84 | 0.083 | 900 |
+
+### (e) 
+
+In the following orange is from the means of posterior distribution, purple from the medians of the same, and blue is the distribution we were trying to model. 
+
+```{r, message=FALSE, echo=FALSE}
+hist(y, prob=TRUE, main="", xlab="y",ylim=c(0, 0.3))
+curve(dfrechet(x, lambda, mu, sigma), add=TRUE, lwd=2, col="blue")
+curve(dfrechet(x, mean(samples[[1]][,"lambda"]), mean(samples[[1]][,"mu"]), mean(samples[[1]][,"sigma"])), add=TRUE, lwd=2, col="orange")
+curve(dfrechet(x, median(samples[[1]][,"lambda"]), median(samples[[1]][,"mu"]), median(samples[[1]][,"sigma"])), add=TRUE, lwd=2, col="purple")
+```
+
+There is definitely not enough data here to really pull any detail about 
+the lower portion of this distribution (where all the weight of the pdf really is). 
+If you just gave me this plot and didn't tell me which curve is which 
+I'd have no idea which is the real vs modeled. They both don't look great
+next to the histogram. No wonder our fit is struggling, $n=50$ is definitely not enough.  
+
+
+
+
