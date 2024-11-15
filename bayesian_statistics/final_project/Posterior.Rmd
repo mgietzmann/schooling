@@ -1,0 +1,84 @@
+---
+title: STAT641 - Final Project - Fitting the Prior
+author: Marcel Gietzmann-Sanders
+---
+
+## Load Data
+
+```{r}
+library(sf)
+library(spData)
+library(mapview)
+map <- st_read(
+    system.file("shapes/boston_tracts.shp", package = "spData"), 
+    quiet = TRUE
+)
+```
+
+## Format for Model
+
+```{r}
+library(spdep)
+nb <- poly2nb(map)
+N = length(map$MEDV)
+node1 = c()
+node2 = c()
+for (i in 1:N) {
+    for (j in nb[[i]]) {
+        if (j > i) {
+            node1 = c(node1, i)
+            node2 = c(node2, j)
+        }
+    }
+}
+N_edges = length(node1)
+```
+
+```{r}
+map$log_median_value <- log(map$MEDV)
+y = map$log_median_value
+x = cbind(map$CRIM, map$RM, log(map$DIS), map$NOX)
+K = dim(x)[2]
+```
+
+## Fit Model
+
+```{r}
+library(rstan)
+rstan_options(auto_write=TRUE)
+options(mc.cores = parallel::detectCores())
+stanfit = stan(
+    "bym2.stan",
+    data=list(N, N_edges, node1, node2, K, x, y),
+    control=list(max_treedepth=15)
+)
+check_hmc_diagnostics(stanfit)
+print(stanfit, probs=c(0.25, 0.75), digits_summary=1)
+saveRDS(stanfit, file = "stanfit_object.rds")
+```
+
+```{r}
+traceplot(stanfit, pars="beta0")
+```
+
+```
+library(ggplot2)
+library(dplyr)
+# Extract the samples for phi
+samples = extract(stanfit)$phi
+(dim(samples))
+phi_correlation_matrix = cor(samples)
+phi_correlation_long <- as.data.frame(as.table(phi_correlation_matrix))
+colnames(phi_correlation_long) <- c("Phi1", "Phi2", "Correlation")
+
+# Plot the correlation matrix using ggplot2
+ggplot(phi_correlation_long, aes(x = Phi1, y = Phi2, fill = Correlation)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, 
+                         limit = c(-1, 1), space = "Lab", 
+                         name = "Correlation") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = "Correlation Matrix of Phi Parameters",
+         x = "Phi Index", y = "Phi Index")
+```

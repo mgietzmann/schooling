@@ -1,0 +1,29 @@
+\begin{thebibliography}{}
+
+\bibitem[Bivand, 2022]{spdata}
+Bivand, Roger, J. N.-R.~L. (2022).
+\newblock spdata: Datasets for spatial analysis.
+
+\bibitem[David and Rubinfeld, 1978]{origin}
+David, H. and Rubinfeld, D.~L. (1978).
+\newblock Hedonic housing prices and the demand for clean air.
+\newblock {\em Journal of Environmental Economics and Management}.
+
+\bibitem[Julian, 1974]{besag}
+Julian, B. (1974).
+\newblock Spatial interaction and the statistical analysis of lattice systems.
+\newblock {\em Journal of the Royal Statistical Society}.
+
+\bibitem[Mitzi~Morris, 2019]{bymstan}
+Mitzi~Morris, Katherine Wheeler-Martin, D. S. S. J. M. A. G. C.~D. (2019).
+\newblock Bayesian hierarchical spatial models: Implementing the besag york
+  mollié model in stan.
+\newblock {\em Spat Spatiotemporal Epidemiol}.
+
+\bibitem[Moraga, 2023]{book}
+Moraga, P. (2023).
+\newblock {\em Spatial Statistics for Data Science: Theory and Practice with
+  R}.
+\newblock American Fisheries Society.
+
+\end{thebibliography}

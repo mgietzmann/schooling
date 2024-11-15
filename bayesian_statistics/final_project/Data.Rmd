@@ -1,0 +1,62 @@
+---
+title: STAT641 - Final Project - EDA
+author: Marcel Gietzmann-Sanders
+---
+
+```{r}
+library(sf)
+library(spData)
+library(mapview)
+map <- st_read(system.file("shapes/boston_tracts.shp",
+               package = "spData"), quiet = TRUE)
+map$log_median_value <- log(map$MEDV)
+mapview(map, zcol = "MEDV")
+```
+
+```{r}
+head(map)
+```
+
+```{r}
+hist(map$log_median_value, xlab="Log Median Value", main="Distribution of Log Median Values")
+```
+
+```{r}
+plot(
+    x=map$CRIM,
+    y=map$log_median_value,
+    xlab="Crime Rate",
+    ylab="Log Median Value",
+    main="Value v Crime Rate"
+)
+```
+
+```{r}
+plot(
+    x=map$RM,
+    y=map$log_median_value,
+    xlab="Rooms per Dwelling",
+    ylab="Log Median Value",
+    main="Value v Rooms"
+)
+```
+
+```{r}
+plot(
+    x=log(map$DIS),
+    y=map$log_median_value,
+    xlab="Log Weighted Distance to Employment",
+    ylab="Log Median Value",
+    main="Value v Distance to Employment"
+)
+```
+
+```{r}
+plot(
+    x=map$NOX,
+    y=map$log_median_value,
+    xlab="Nitric Oxide Concentration (ppm)",
+    ylab="Log Median Value",
+    main="Value v NOX"
+)
+```
