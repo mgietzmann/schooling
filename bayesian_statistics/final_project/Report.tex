@@ -48,26 +48,13 @@ University of Alaska Fairbanks
 
 For this study we'll be using a dataset originally published in 1978 on housing prices in Boston, Massachusetts (\cite{origin}). This data was made accessible through \code{spData} package in R (\cite{spdata}). Specifically this dataset contains median house prices and potential covariates for 506 tracts in the Greater Boston Area. Fig. \ref{fig:prices} shows the median price per tract of land where it should be understood that this data is censored and median values over \$50,000 are capped. A full list of covariates can be found in the documentation for the \code{boston} dataset in \code{spData}. What we wish to understand is which of these covariates are indeed related to housing prices after being added to a spatial bayesian model. \newline
 
-\begin{figure}[h!] 
-  \centering
-  \includegraphics[height=75mm]{prices.png}
-  \caption{Median Housing Price}
-  \medskip
-	\small
-	The median house value (in \$1000USD) by census tract in the Greater Boston Area.
-  \label{fig:prices}
-\end{figure}
+
 
 Starting with some exploratory data analysis we identified four covariates of particular interest. Crime rates per capita, average number of rooms per dwelling, weighted distance to employment centers, and the nitric oxide concentrations per town. 
 
 First, as the distribution of values is right skewed (and following in the footsteps of (\cite{book})) we took as our target variable the logarithm of the median house value per tract instead of the median value itself. Fig. \ref{fig:price_dist} shows the distribution of our target. 
 
-\begin{figure}[h!] 
-  \centering
-  \includegraphics[height=75mm]{price_dist.png}
-  \caption{Log Median Housing Price Distribution}
-  \label{fig:price_dist}
-\end{figure}
+
 
 Fig. \ref{fig:crime} shows the relationship between per capita crime rate and our target with a clear negatively correlated relationship between then two and a rather wide spread of values in and around 0. 
 
@@ -77,33 +64,6 @@ In Fig. \ref{fig:employment} we see a similar positive relationship between the 
 
 Finally Fig. \ref{fig:nox} shows us the relationship between nitric oxide concentrations in parts per million and our target with a somewhat spurious negative relationship. 
 
-\begin{figure}[h!] 
-  \centering
-  \includegraphics[height=75mm]{crime.png}
-  \caption{Log Median Price vs Crime Rate}
-  \label{fig:crime}
-\end{figure}
-
-\begin{figure}[h!] 
-  \centering
-  \includegraphics[height=75mm]{rooms.png}
-  \caption{Log Median Price vs Rooms per Dwelling}
-  \label{fig:rooms}
-\end{figure}
-
-\begin{figure}[h!] 
-  \centering
-  \includegraphics[height=75mm]{employment.png}
-  \caption{Log Median Price vs Log Weighted Distance to Employment Centers}
-  \label{fig:employment}
-\end{figure}
-
-\begin{figure}[h!] 
-	\centering
-  \includegraphics[height=75mm]{nox.png}
-  \caption{Log Median Price vs NOX}
-  \label{fig:nox}
-\end{figure}
 
 \section{Defining the Model}
 
@@ -122,9 +82,15 @@ For our more straightforward priors we will have:
 $$\beta_0 \sim Normal(0,1)$$
 $$\beta_i \sim Normal(0,1)$$
 $$\theta_i \sim Normal(0,1)$$
-$$\sigma \sim Normal(0,1)$$
-$$\sigma_r \sim Normal(0,1)$$
+$$\sigma_r \sim Uniform(0,1)$$
 $$\rho = \frac{e^{r}}{1 + e^{r}}, r\sim Normal(0,1)$$
+
+In initial fitting of the model we also had the prior:
+
+
+$$\sigma \sim Normal(0,1)$$
+
+but consistently found $\sigma \approx 0$ and therefore simply set $\sigma=0.01$ in order to not over complicate the sampling. 
 
 Our spatial terms $\phi_i$ are a little more complicated. \newline
 
@@ -148,7 +114,48 @@ $$p(\vec{\phi})\propto \exp{\left( -\frac{1}{2} \sum_{i\sim j} (\phi_i - \phi_j)
 
 where $i \sim j$ indicates that $i$ and $j$ are neighbors. This then is our prior for the $\phi_i$ - an ICAR model centered at $0$ with common variance $1$. 
 
-\section{Implementing the Model}
+
+\section{Results}
+
+
+\begin{center}
+\begin{tabular}{ c  | c | c | c | c | c}
+\hline
+ Parameter & 95\% CI & Mean & SD & SE & $\hat{R}$ \\ 
+ \hline
+ $\beta_0$ & 2.130, 2.397 & 2.264 & 0.198 & 0.004 & 1.001 \\
+ $\beta_{CRIM}$ & -0.009, -0.007 & -0.008 & 0.001 & $\approx 0$ & 1.000 \\
+ $\beta_{RM}$ & 0.237, 0.255 & 0.246 & 0.014 & $\approx 0$  & 1.000\\
+ $\beta_{\log{(DIS)}}$ & -0.171, -0.054 & -0.112 & 0.085 & 0.004 & 1.008 \\
+ $\beta_{NOX}$ & -1.234, -0.972 & -1.105 & 0.197 & 0.003 & 1.002 \\
+ $\sigma_r$ & 0.341, 0.363 & 0.352 & 0.016 & $\approx 0$ & 1.001 \\
+$\rho$ & 0.941, 0.966 & 0.952 & 0.019 & $\approx 0$ & 1.001 \\
+\end{tabular}
+\end{center}
+
+Given the very small value on $\beta_{CRIM}$ we also trained a model without that feature present. 
+
+\begin{center}
+\begin{tabular}{ c  | c | c | c | c | c}
+\hline
+ Parameter & 95\% CI & Mean & SD & SE & $\hat{R}$ \\ 
+ \hline
+ $\beta_0$ & 2.041,  2.312 & 2.177 & 0.203 & 0.004 & 1.001 \\
+ $\beta_{RM}$ & 0.237, 0.257 & 0.247 & 0.015 & $\approx 0$ & 1.000 \\
+ $\beta_{\log{(DIS)}}$ & -0.119, 0.003 & -0.061 & 0.085 & 0.004 & 1.009 \\
+ $\beta_{NOX}$ & -1.260, -0.983 & -1.122 & 0.205 & 0.004 & 1.003 \\
+ $\sigma_r$ & 0.361, 0.381 & 0.371 & 0.015 & $\approx 0$ & 1.002 \\
+ $\rho$ & 0.952, 0.973 & 0.961 & 0.016 & 0.001 & 1.005 \\
+\end{tabular}
+\end{center}
+
+\newpage
+
+
+
+\section{Code}
+
+\subsection{Implementing the Model}
 
 Here we have the \code{stan} model itself:
 
@@ -173,7 +180,6 @@ parameters {
     real beta0;
     vector[K] betas;
 
-    real<lower=0> sigma;
     real logit_rho;
 
     vector[N] phi;
@@ -187,21 +193,22 @@ transformed parameters {
                                 + sqrt(1 - rho) * theta;
 }
 model {
-    y ~ normal(beta0 + x * betas + convolved_re * sigma_r, sigma);
+    y ~ normal(beta0 + x * betas + convolved_re * sigma_r, 0.01);
     target += icar_normal_lpdf(phi | N, node1, node2);
     beta0 ~ normal(0, 1);
     betas ~ normal(0, 1);
     logit_rho ~ normal(0, 1);
-    sigma ~ normal(0, 1);
     theta ~ normal(0, 1);
-    sigma_r ~ normal(0, 1);
+    sigma_r ~ uniform(0, 1);
 }
 
 \end{lstlisting}
 
 Note the term \verb+normal_lpdf(sum(phi)|0,0.001*N)+ used to center $\vec{\phi}$ at zero (\cite{bymstan}). 
 
-\section{Fitting the Model}
+\newpage
+
+\subsection{Fitting the Model}
 
 First we need to setup all of our data:
 
@@ -235,77 +242,121 @@ x = cbind(map$CRIM, map$RM, log(map$DIS), map$NOX)
 K = dim(x)[2]
 \end{lstlisting}
 
+\newpage
+
+\section{Bibliography}
+
+\bibliographystyle{apalike}
+\bibliography{reference}
+
+\newpage
+
+
+
+\section{Figures}
+
+\begin{figure}[h!] 
+  \centering
+  \includegraphics[height=75mm]{prices.png}
+  \caption{Median Housing Price}
+  \medskip
+	\small
+	The median house value (in \$1000USD) by census tract in the Greater Boston Area.
+  \label{fig:prices}
+\end{figure}
+
+\begin{figure}[h!] 
+  \centering
+  \includegraphics[height=75mm]{price_dist.png}
+  \caption{Log Median Housing Price Distribution}
+  \label{fig:price_dist}
+\end{figure}
+
+
+\begin{figure}[h!] 
+  \centering
+  \includegraphics[height=75mm]{crime.png}
+  \caption{Log Median Price vs Crime Rate}
+  \label{fig:crime}
+\end{figure}
+
+\begin{figure}[h!] 
+  \centering
+  \includegraphics[height=75mm]{rooms.png}
+  \caption{Log Median Price vs Rooms per Dwelling}
+  \label{fig:rooms}
+\end{figure}
+
+\begin{figure}[h!] 
+  \centering
+  \includegraphics[height=75mm]{employment.png}
+  \caption{Log Median Price vs Log Weighted Distance to Employment Centers}
+  \label{fig:employment}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{nox.png}
+  \caption{Log Median Price vs NOX}
+  \label{fig:nox}
+\end{figure}
+
 
 \begin{figure}[h!] 
 	\centering
   \includegraphics[height=75mm]{traceplot_betas.png}
-  \caption{$\vec{\beta}$ Traceplots}
+  \caption{$\vec{\beta}$ Traceplots for 4 Feature Model}
   \label{fig:tbetas}
 \end{figure}
 
 \begin{figure}[h!] 
 	\centering
   \includegraphics[height=75mm]{traceplot_beta0.png}
-  \caption{$\beta_0$ Traceplot}
+  \caption{$\beta_0$ Traceplot for 4 Feature Model}
   \label{fig:tbeta0}
 \end{figure}
 
 \begin{figure}[h!] 
 	\centering
-  \includegraphics[height=75mm]{traceplot_sigma.png}
-  \caption{$\sigma$ Traceplot}
-  \label{fig:tsigma}
-\end{figure}
-
-\begin{figure}[h!] 
-	\centering
   \includegraphics[height=75mm]{traceplot_sigma_r.png}
-  \caption{$\sigma_r$ Traceplot}
+  \caption{$\sigma_r$ Traceplot for 4 Feature Model}
   \label{fig:tsigma_r}
 \end{figure}
 
 \begin{figure}[h!] 
 	\centering
   \includegraphics[height=75mm]{traceplot_logit_rho.png}
-  \caption{$r$ Traceplot}
+  \caption{$r$ Traceplot for 4 Feature Model}
   \label{fig:tlogit_rho}
 \end{figure}
-
 
 
 
 \begin{figure}[h!] 
 	\centering
   \includegraphics[height=75mm]{density_betas.png}
-  \caption{$\vec{\beta}$ Densities}
+  \caption{$\vec{\beta}$ Densities for 4 Feature Model}
   \label{fig:dbetas}
 \end{figure}
 
 \begin{figure}[h!] 
 	\centering
   \includegraphics[height=75mm]{density_beta0.png}
-  \caption{$\beta_0$ Density}
+  \caption{$\beta_0$ Density for 4 Feature Model}
   \label{fig:dbeta0}
 \end{figure}
 
 \begin{figure}[h!] 
 	\centering
-  \includegraphics[height=75mm]{density_sigma.png}
-  \caption{$\sigma$ Density}
-  \label{fig:dsigma}
-\end{figure}
-
-\begin{figure}[h!] 
-	\centering
   \includegraphics[height=75mm]{density_sigma_r.png}
-  \caption{$\sigma_r$ Density}
+  \caption{$\sigma_r$ Density for 4 Feature Model}
   \label{fig:dsigma_r}
 \end{figure}
 
 \begin{figure}[h!] 
 	\centering
   \includegraphics[height=75mm]{density_logit_rho.png}
-  \caption{$r$ Density}
+  \caption{$r$ Density for 4 Feature Model}
   \label{fig:dlogit_rho}
 \end{figure}
 
@@ -320,7 +371,74 @@ K = dim(x)[2]
 
 
 
-\newpage
-\bibliographystyle{apalike}
-\bibliography{reference}
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{traceplot_betas2.png}
+  \caption{$\vec{\beta}$ Traceplots for 3 Feature Model}
+  \label{fig:tbetas2}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{traceplot_beta02.png}
+  \caption{$\beta_0$ Traceplot for 3 Feature Model}
+  \label{fig:tbeta02}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{traceplot_sigma_r2.png}
+  \caption{$\sigma_r$ Traceplot for 3 Feature Model}
+  \label{fig:tsigma_r2}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{traceplot_logit_rho2.png}
+  \caption{$r$ Traceplot for 3 Feature Model}
+  \label{fig:tlogit_rho2}
+\end{figure}
+
+
+
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{density_betas2.png}
+  \caption{$\vec{\beta}$ Densities for 3 Feature Model}
+  \label{fig:dbetas2}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{density_beta02.png}
+  \caption{$\beta_0$ Density for 3 Feature Model}
+  \label{fig:dbeta02}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{density_sigma_r2.png}
+  \caption{$\sigma_r$ Density for 3 Feature Model}
+  \label{fig:dsigma_r2}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering
+  \includegraphics[height=75mm]{density_logit_rho2.png}
+  \caption{$r$ Density for 3 Feature Model}
+  \label{fig:dlogit_rho2}
+\end{figure}
+
+
+
+
+
+
+
+
+
+
+
+
+
 \end{document}

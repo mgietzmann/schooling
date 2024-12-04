@@ -22,7 +22,7 @@ traceplot(stanfit, pars="beta0")
 dev.off()
 ```
 
-```{r}
+```
 png("traceplot_sigma.png", width = 800, height = 600)
 traceplot(stanfit, pars="sigma")
 dev.off()
@@ -52,7 +52,7 @@ stan_dens(stanfit, pars="beta0")
 dev.off()
 ```
 
-```{r}
+```
 png("density_sigma.png", width = 800, height = 600)
 stan_dens(stanfit, pars="sigma")
 dev.off()
@@ -68,5 +68,80 @@ dev.off()
 png("density_logit_rho.png", width = 800, height = 600)
 stan_dens(stanfit, pars="logit_rho")
 dev.off()
+```
+
+```{r}
+print(stanfit, probs=c(0.25, 0.75), digits_summary=3)
+```
+
+```{r}
+stanfit2 <- readRDS("stanfit_object_crim.rds")
+print(stanfit2, probs=c(0.25, 0.75), digits_summary=3)
+```
+
+```{r}
+png("traceplot_betas2.png", width = 800, height = 600)
+traceplot(stanfit, pars="betas")
+dev.off()
+```
+
+```{r}
+png("traceplot_beta02.png", width = 800, height = 600)
+traceplot(stanfit, pars="beta0")
+dev.off()
+```
+
+```
+png("traceplot_sigma.png", width = 800, height = 600)
+traceplot(stanfit, pars="sigma")
+dev.off()
+```
+
+```{r}
+png("traceplot_sigma_r2.png", width = 800, height = 600)
+traceplot(stanfit2, pars="sigma_r")
+dev.off()
+```
+
+```{r}
+png("traceplot_logit_rho2.png", width = 800, height = 600)
+traceplot(stanfit2, pars="logit_rho")
+dev.off()
+```
+
+```{r}
+png("density_betas2.png", width = 800, height = 600)
+stan_dens(stanfit2, pars="betas")
+dev.off()
+```
+
+```{r}
+png("density_beta02.png", width = 800, height = 600)
+stan_dens(stanfit2, pars="beta0")
+dev.off()
+```
+
+```
+png("density_sigma.png", width = 800, height = 600)
+stan_dens(stanfit, pars="sigma")
+dev.off()
+```
+
+```{r}
+png("density_sigma_r2.png", width = 800, height = 600)
+stan_dens(stanfit2, pars="sigma_r")
+dev.off()
+```
+
+```{r}
+png("density_logit_rho2.png", width = 800, height = 600)
+stan_dens(stanfit2, pars="logit_rho")
+dev.off()
+```
+
+```
+posterior_samples <- as.data.frame(stanfit2)
+mean(posterior_samples$"betas[2]" < 0) / mean(posterior_samples$"betas[2]" >= 0)
+
 ```
 

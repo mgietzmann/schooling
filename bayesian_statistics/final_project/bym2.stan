@@ -17,7 +17,6 @@ parameters {
     real beta0;
     vector[K] betas;
 
-    real<lower=0> sigma;
     real logit_rho;
 
     vector[N] phi;
@@ -31,12 +30,11 @@ transformed parameters {
                                 + sqrt(1 - rho) * theta;
 }
 model {
-    y ~ normal(beta0 + x * betas + convolved_re * sigma_r, sigma);
+    y ~ normal(beta0 + x * betas + convolved_re * sigma_r, 0.01);
     target += icar_normal_lpdf(phi | N, node1, node2);
     beta0 ~ normal(0, 1);
     betas ~ normal(0, 1);
     logit_rho ~ normal(0, 1);
-    sigma ~ normal(0, 1);
     theta ~ normal(0, 1);
-    sigma_r ~ normal(0, 1);
+    sigma_r ~ uniform(0, 1);
 }

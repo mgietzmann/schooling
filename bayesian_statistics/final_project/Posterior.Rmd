@@ -35,27 +35,48 @@ N_edges = length(node1)
 ```
 
 ```{r}
+library(rstan)
+rstan_options(auto_write=TRUE)
+options(mc.cores = parallel::detectCores())
+```
+
+```{r}
 map$log_median_value <- log(map$MEDV)
 y = map$log_median_value
 x = cbind(map$CRIM, map$RM, log(map$DIS), map$NOX)
 K = dim(x)[2]
-```
-
-## Fit Model
-
-```{r}
-library(rstan)
-rstan_options(auto_write=TRUE)
-options(mc.cores = parallel::detectCores())
 stanfit = stan(
     "bym2.stan",
     data=list(N, N_edges, node1, node2, K, x, y),
-    control=list(max_treedepth=15)
+    control=list(max_treedepth=15),
+    iter=7500,
+    chains=4
 )
 check_hmc_diagnostics(stanfit)
 print(stanfit, probs=c(0.25, 0.75), digits_summary=1)
 saveRDS(stanfit, file = "stanfit_object.rds")
 ```
+
+
+
+```{r}
+map$log_median_value <- log(map$MEDV)
+y = map$log_median_value
+x = cbind(map$RM, log(map$DIS), map$NOX)
+K = dim(x)[2]
+stanfit = stan(
+    "bym2.stan",
+    data=list(N, N_edges, node1, node2, K, x, y),
+    control=list(max_treedepth=15),
+    iter=7500,
+    chains=4
+)
+check_hmc_diagnostics(stanfit)
+print(stanfit, probs=c(0.25, 0.75), digits_summary=1)
+saveRDS(stanfit, file = "stanfit_object_crim.rds")
+```
+
+## Fit Model
 
 ```{r}
 traceplot(stanfit, pars="beta0")
