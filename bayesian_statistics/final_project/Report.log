@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.5.25)  15 NOV 2024 10:08
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.5.25)  6 DEC 2024 15:45
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -279,88 +279,59 @@ e
 ))
 \c@lstlisting=\count290
 
-Underfull \hbox (badness 10000) in paragraph at lines 49--50
+(./Report.toc)
+\tf@toc=\write3
+\openout3 = `Report.toc'.
+
+ [1
+
+{/usr/local/texlive/2022/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Underfull \hbox (badness 10000) in paragraph at lines 51--52
 
  []
 
-<prices.png, id=1, 672.5125pt x 444.66125pt>
-File: prices.png Graphic file (type png)
-<use prices.png>
-Package pdftex.def Info: prices.png  used on input line 53.
-(pdftex.def)             Requested size: 322.74075pt x 213.39566pt.
+[2]
+LaTeX Font Info:    Trying to load font information for U+msa on input line 72.
 
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-<price_dist.png, id=3, 673.51625pt x 480.79625pt>
-File: price_dist.png Graphic file (type png)
-<use price_dist.png>
-Package pdftex.def Info: price_dist.png  used on input line 67.
-(pdftex.def)             Requested size: 298.93787pt x 213.39566pt.
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-[1
-
-{/usr/local/texlive/2022/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-
-LaTeX Warning: Text page 2 contains only floats.
-
-
-Overfull \vbox (1.72026pt too high) has occurred while \output is active []
-
-
-[2 <./prices.png> <./price_dist.png>]
-<crime.png, id=20, 673.51625pt x 478.78876pt>
-File: crime.png Graphic file (type png)
-<use crime.png>
-Package pdftex.def Info: crime.png  used on input line 82.
-(pdftex.def)             Requested size: 300.1814pt x 213.39566pt.
-<rooms.png, id=21, 673.51625pt x 478.78876pt>
-File: rooms.png Graphic file (type png)
-<use rooms.png>
-Package pdftex.def Info: rooms.png  used on input line 89.
-(pdftex.def)             Requested size: 300.1814pt x 213.39566pt.
-
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-<employment.png, id=22, 673.51625pt x 477.785pt>
-File: employment.png Graphic file (type png)
-<use employment.png>
-Package pdftex.def Info: employment.png  used on input line 96.
-(pdftex.def)             Requested size: 300.80829pt x 213.39566pt.
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-<nox.png, id=23, 672.5125pt x 478.78876pt>
-File: nox.png Graphic file (type png)
-<use nox.png>
-Package pdftex.def Info: nox.png  used on input line 103.
-(pdftex.def)             Requested size: 299.73402pt x 213.39566pt.
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-LaTeX Font Info:    Trying to load font information for U+msa on input line 110
-.
-(/usr/local/texlive/2022/texmf-dist/tex/latex/amsfonts/umsa.fd
+ (/usr/local/texlive/2022/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 110
-.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 72.
+
 
 (/usr/local/texlive/2022/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) [3 <./crime.png>]
-
-LaTeX Warning: Text page 4 contains only floats.
-
-[4 <./rooms.png> <./employment.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 129--130
+)
+Underfull \hbox (badness 10000) in paragraph at lines 97--98
 
  []
 
-[5 <./nox.png>]
-(/usr/local/texlive/2022/texmf-dist/tex/latex/listings/lstlang1.sty
+[3] [4]
+Underfull \hbox (badness 10000) in paragraph at lines 123--124
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 125--126
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 166--167
+
+ []
+
+[5]
+Underfull \hbox (badness 10000) in paragraph at lines 170--171
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 172--173
+
+ []
+
+[6] (/usr/local/texlive/2022/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2020/03/24 1.8d listings language file
 )
 (/usr/local/texlive/2022/texmf-dist/tex/latex/listings/lstlang1.sty
@@ -370,29 +341,28 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 File: lstmisc.sty 2020/03/24 1.8d (Carsten Heinz)
 )
 LaTeX Font Info:    Trying to load font information for OMS+cmr on input line 1
-57.
+83.
 
 (/usr/local/texlive/2022/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2019/12/16 v2.5j Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 157.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 183.
 
-Overfull \hbox (72.0044pt too wide) in paragraph at lines 158--159
+Overfull \hbox (72.0044pt too wide) in paragraph at lines 184--185
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
  []
 
-[6]
 LaTeX Font Info:    Trying to load font information for OML+cmr on input line 1
-64.
- (/usr/local/texlive/2022/texmf-dist/tex/latex/base/omlcmr.fd
+90.
+(/usr/local/texlive/2022/texmf-dist/tex/latex/base/omlcmr.fd
 File: omlcmr.fd 2019/12/16 v2.5j Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <10> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 164.
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 190.
 
-Overfull \hbox (36.00403pt too wide) in paragraph at lines 190--191
-[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
+Overfull \hbox (30.00397pt too wide) in paragraph at lines 215--216
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
  []
 
 [7] (/usr/local/texlive/2022/texmf-dist/tex/latex/listings/lstlang1.sty
@@ -405,32 +375,71 @@ File: lstlang2.sty 2020/03/24 1.8d listings language file
 File: lstlang3.sty 2020/03/24 1.8d listings language file
 )
 LaTeX Font Info:    Font shape `OML/cmr/bx/n' in size <10> not available
-(Font)              Font shape `OML/cmm/b/it' tried instead on input line 212.
+(Font)              Font shape `OML/cmm/b/it' tried instead on input line 236.
 
-Overfull \hbox (24.0039pt too wide) in paragraph at lines 213--214
+Overfull \hbox (24.0039pt too wide) in paragraph at lines 237--238
 [][][][][][][][][][][][][][][][][][][][][][][][][][] 
  []
 
-<traceplot_betas.png, id=53, 803.0pt x 602.25pt>
+[8] (./Report.bbl) [9]
+<prices.png, id=47, 672.5125pt x 444.66125pt>
+File: prices.png Graphic file (type png)
+<use prices.png>
+Package pdftex.def Info: prices.png  used on input line 280.
+(pdftex.def)             Requested size: 322.74075pt x 213.39566pt.
+<price_dist.png, id=49, 673.51625pt x 480.79625pt>
+File: price_dist.png Graphic file (type png)
+<use price_dist.png>
+Package pdftex.def Info: price_dist.png  used on input line 290.
+(pdftex.def)             Requested size: 298.93787pt x 213.39566pt.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<crime.png, id=50, 673.51625pt x 478.78876pt>
+File: crime.png Graphic file (type png)
+<use crime.png>
+Package pdftex.def Info: crime.png  used on input line 298.
+(pdftex.def)             Requested size: 300.1814pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<rooms.png, id=51, 673.51625pt x 478.78876pt>
+File: rooms.png Graphic file (type png)
+<use rooms.png>
+Package pdftex.def Info: rooms.png  used on input line 305.
+(pdftex.def)             Requested size: 300.1814pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<employment.png, id=52, 673.51625pt x 477.785pt>
+File: employment.png Graphic file (type png)
+<use employment.png>
+Package pdftex.def Info: employment.png  used on input line 312.
+(pdftex.def)             Requested size: 300.80829pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<nox.png, id=53, 672.5125pt x 478.78876pt>
+File: nox.png Graphic file (type png)
+<use nox.png>
+Package pdftex.def Info: nox.png  used on input line 319.
+(pdftex.def)             Requested size: 299.73402pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<traceplot_betas.png, id=54, 803.0pt x 602.25pt>
 File: traceplot_betas.png Graphic file (type png)
 <use traceplot_betas.png>
-Package pdftex.def Info: traceplot_betas.png  used on input line 241.
+Package pdftex.def Info: traceplot_betas.png  used on input line 327.
 (pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-<traceplot_beta0.png, id=54, 803.0pt x 602.25pt>
+<traceplot_beta0.png, id=55, 803.0pt x 602.25pt>
 File: traceplot_beta0.png Graphic file (type png)
 <use traceplot_beta0.png>
-Package pdftex.def Info: traceplot_beta0.png  used on input line 248.
-(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-<traceplot_sigma.png, id=55, 803.0pt x 602.25pt>
-File: traceplot_sigma.png Graphic file (type png)
-<use traceplot_sigma.png>
-Package pdftex.def Info: traceplot_sigma.png  used on input line 255.
+Package pdftex.def Info: traceplot_beta0.png  used on input line 334.
 (pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
@@ -438,7 +447,7 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 <traceplot_sigma_r.png, id=56, 803.0pt x 602.25pt>
 File: traceplot_sigma_r.png Graphic file (type png)
 <use traceplot_sigma_r.png>
-Package pdftex.def Info: traceplot_sigma_r.png  used on input line 262.
+Package pdftex.def Info: traceplot_sigma_r.png  used on input line 341.
 (pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
@@ -446,7 +455,7 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 <traceplot_logit_rho.png, id=57, 803.0pt x 602.25pt>
 File: traceplot_logit_rho.png Graphic file (type png)
 <use traceplot_logit_rho.png>
-Package pdftex.def Info: traceplot_logit_rho.png  used on input line 269.
+Package pdftex.def Info: traceplot_logit_rho.png  used on input line 348.
 (pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
@@ -454,7 +463,7 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 <density_betas.png, id=58, 803.0pt x 602.25pt>
 File: density_betas.png Graphic file (type png)
 <use density_betas.png>
-Package pdftex.def Info: density_betas.png  used on input line 279.
+Package pdftex.def Info: density_betas.png  used on input line 357.
 (pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
@@ -462,74 +471,131 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 <density_beta0.png, id=59, 803.0pt x 602.25pt>
 File: density_beta0.png Graphic file (type png)
 <use density_beta0.png>
-Package pdftex.def Info: density_beta0.png  used on input line 286.
+Package pdftex.def Info: density_beta0.png  used on input line 364.
 (pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-<density_sigma.png, id=60, 803.0pt x 602.25pt>
-File: density_sigma.png Graphic file (type png)
-<use density_sigma.png>
-Package pdftex.def Info: density_sigma.png  used on input line 293.
-(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
-
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-<density_sigma_r.png, id=61, 803.0pt x 602.25pt>
+<density_sigma_r.png, id=60, 803.0pt x 602.25pt>
 File: density_sigma_r.png Graphic file (type png)
 <use density_sigma_r.png>
-Package pdftex.def Info: density_sigma_r.png  used on input line 300.
+Package pdftex.def Info: density_sigma_r.png  used on input line 371.
 (pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-<density_logit_rho.png, id=62, 803.0pt x 602.25pt>
+<density_logit_rho.png, id=61, 803.0pt x 602.25pt>
 File: density_logit_rho.png Graphic file (type png)
 <use density_logit_rho.png>
-Package pdftex.def Info: density_logit_rho.png  used on input line 307.
+Package pdftex.def Info: density_logit_rho.png  used on input line 378.
 (pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-[8] (./Report.bbl [9 <./traceplot_betas.png (PNG copy)> <./traceplot_beta0.png 
-(PNG copy)>] [10 <./traceplot_sigma.png (PNG copy)> <./traceplot_sigma_r.png (P
-NG copy)>] [11 <./traceplot_logit_rho.png (PNG copy)> <./density_betas.png (PNG
- copy)>] [12 <./density_beta0.png (PNG copy)> <./density_sigma.png (PNG copy)>]
-[13 <./density_sigma_r.png (PNG copy)> <./density_logit_rho.png (PNG copy)>])
-[14] (./Report.aux)
+<traceplot_betas2.png, id=62, 803.0pt x 602.25pt>
+File: traceplot_betas2.png Graphic file (type png)
+<use traceplot_betas2.png>
+Package pdftex.def Info: traceplot_betas2.png  used on input line 396.
+(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+LaTeX Warning: `!h' float specifier changed to `!ht'.
 
- ) 
+<traceplot_beta02.png, id=63, 803.0pt x 602.25pt>
+File: traceplot_beta02.png Graphic file (type png)
+<use traceplot_beta02.png>
+Package pdftex.def Info: traceplot_beta02.png  used on input line 403.
+(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<traceplot_sigma_r2.png, id=64, 803.0pt x 602.25pt>
+File: traceplot_sigma_r2.png Graphic file (type png)
+<use traceplot_sigma_r2.png>
+Package pdftex.def Info: traceplot_sigma_r2.png  used on input line 410.
+(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<traceplot_logit_rho2.png, id=65, 803.0pt x 602.25pt>
+File: traceplot_logit_rho2.png Graphic file (type png)
+<use traceplot_logit_rho2.png>
+Package pdftex.def Info: traceplot_logit_rho2.png  used on input line 417.
+(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<density_betas2.png, id=66, 803.0pt x 602.25pt>
+File: density_betas2.png Graphic file (type png)
+<use density_betas2.png>
+Package pdftex.def Info: density_betas2.png  used on input line 426.
+(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<density_beta02.png, id=67, 803.0pt x 602.25pt>
+File: density_beta02.png Graphic file (type png)
+<use density_beta02.png>
+Package pdftex.def Info: density_beta02.png  used on input line 433.
+(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<density_sigma_r2.png, id=68, 803.0pt x 602.25pt>
+File: density_sigma_r2.png Graphic file (type png)
+<use density_sigma_r2.png>
+Package pdftex.def Info: density_sigma_r2.png  used on input line 440.
+(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<density_logit_rho2.png, id=69, 803.0pt x 602.25pt>
+File: density_logit_rho2.png Graphic file (type png)
+<use density_logit_rho2.png>
+Package pdftex.def Info: density_logit_rho2.png  used on input line 447.
+(pdftex.def)             Requested size: 284.534pt x 213.39566pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[10 <./prices.png>] [11 <./price_dist.png> <./crime.png>] [12 <./rooms.png> <./
+employment.png>] [13 <./nox.png> <./traceplot_betas.png (PNG copy)>] [14 <./tra
+ceplot_beta0.png (PNG copy)> <./traceplot_sigma_r.png (PNG copy)>] [15 <./trace
+plot_logit_rho.png (PNG copy)> <./density_betas.png (PNG copy)>] [16 <./density
+_beta0.png (PNG copy)> <./density_sigma_r.png (PNG copy)>] [17 <./density_logit
+_rho.png (PNG copy)> <./traceplot_betas2.png (PNG copy)>] [18 <./traceplot_beta
+02.png (PNG copy)> <./traceplot_sigma_r2.png (PNG copy)>] [19 <./traceplot_logi
+t_rho2.png (PNG copy)> <./density_betas2.png (PNG copy)>] [20 <./density_beta02
+.png (PNG copy)> <./density_sigma_r2.png (PNG copy)>] [21 <./density_logit_rho2
+.png (PNG copy)>] (./Report.aux) ) 
 Here is how much of TeX's memory you used:
- 6976 strings out of 478268
- 99364 string characters out of 5846347
- 611235 words of memory out of 5000000
- 25063 multiletter control sequences out of 15000+600000
+ 7056 strings out of 478268
+ 100918 string characters out of 5846347
+ 608279 words of memory out of 5000000
+ 25134 multiletter control sequences out of 15000+600000
  480123 words of font info for 66 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 60i,6n,67p,795b,1816s stack positions out of 10000i,1000n,20000p,200000b,200000s
-{/usr/local/texlive/2022/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc
-}</usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb>
-</usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><
-/usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></
-usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></u
-sr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr
-/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr
-/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/l
-ocal/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/loc
-al/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/
-texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/t
-exlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/tex
-live/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texl
-ive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texli
-ve/2022/texmf-dist/fonts/type1/public/cm-super/sfbx1000.pfb></usr/local/texlive
-/2022/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2
-022/texmf-dist/fonts/type1/public/cm-super/sfrm1095.pfb>
-Output written on Report.pdf (14 pages, 2215807 bytes).
+ 60i,9n,67p,785b,1816s stack positions out of 10000i,1000n,20000p,200000b,200000s
+{/usr/local/texlive/2022/texmf-dist/fonts/enc
+/dvips/cm-super/cm-super-ts1.enc}</usr/local/texlive/2022/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1
+/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/pu
+blic/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmmib10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmr10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmr17.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/a
+msfonts/cm/cmr8.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmsy10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfo
+nts/cm/cmsy8.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfont
+s/cm/cmti10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmtt10.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/cm-super/
+sfbx1000.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sf
+rm1000.pfb></usr/local/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfrm
+1095.pfb>
+Output written on Report.pdf (21 pages, 2350585 bytes).
 PDF statistics:
- 154 PDF objects out of 1000 (max. 8388607)
- 83 compressed objects within 1 object stream
+ 182 PDF objects out of 1000 (max. 8388607)
+ 98 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 81 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 111 words of extra memory for PDF output out of 10000 (max. 10000000)
 

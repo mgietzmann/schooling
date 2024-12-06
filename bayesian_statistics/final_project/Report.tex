@@ -120,7 +120,7 @@ where $i \sim j$ indicates that $i$ and $j$ are neighbors. This then is our prio
 
 \section{Fitting the Model}
 
-After computing the appropriate features (covariates and neighbors arrays) we fit our model using \code{rstan} (\cite{rstan}) in the \code{R} programming language (\cite{R}). Each model was fit with 4 chains and 7,500 iterations per chain. \newline
+After computing the appropriate features (covariates and neighbors arrays) we fit our model using \code{rstan} (\cite{rstan}) in the \code{R} programming language (\cite{R}). Each model was fit with 4 chains and 20,000 iterations per chain. 20,000 was selected to ensure each parameter of interest had at least 1,000 effective samples. \newline
 
 Two models were fit, one with the crime rates feature and one without (see section \ref{results}). The trace plots for the former can be found in figures \ref{fig:tbetas}-\ref{fig:tlogit_rho} and the trace plots for the latter are in figures \ref{fig:tbetas2}-\ref{fig:tlogit_rho2}. Densities are in figures \ref{fig:dbetas}-\ref{fig:dlogit_rho} and \ref{fig:dbetas2}-\ref{fig:dlogit_rho2} respectively. The order of features was crime, rooms, distance, and nox for the full model and rooms, distance, and nox for the limited model. \newline
 
@@ -135,13 +135,13 @@ See section \ref{stanmodel} for the \code{stan} model itself and section \ref{in
 \hline
  Parameter & 95\% CI & Mean & SD & SE & $\hat{R}$ & $n_{EFF}$ \\ 
  \hline
- $\beta_0$ & 2.130, 2.397 & 2.264 & 0.198 & 0.004 & 1.001 & 2495 \\
- $\beta_{CRIM}$ & -0.009, -0.007 & -0.008 & 0.001 & $\approx 0$ & 1.000 & 14346  \\
- $\beta_{RM}$ & 0.237, 0.255 & 0.246 & 0.014 & $\approx 0$  & 1.000 & 8457 \\
- $\beta_{\log{(DIS)}}$ & -0.171, -0.054 & -0.112 & 0.085 & 0.004 & 1.008 & 546 \\
- $\beta_{NOX}$ & -1.234, -0.972 & -1.105 & 0.197 & 0.003 & 1.002 & 3557 \\
- $\sigma_r$ & 0.341, 0.363 & 0.352 & 0.016 & $\approx 0$ & 1.001 & 2889 \\
-$\rho$ & 0.941, 0.966 & 0.952 & 0.019 & $\approx 0$ & 1.001 & 1461\\
+ $\beta_0$ & 2.127, 2.394 & 2.260 & 0.197 & 0.002 & 1.000 & 7584 \\
+ $\beta_{CRIM}$ & -0.009, -0.007 & -0.008 & 0.001 & $\approx 0$ & 1.000 & 40517  \\
+ $\beta_{RM}$ & 0.237, 0.255 & 0.246 & 0.014 & $\approx 0$  & 1.000 & 27304 \\
+ $\beta_{\log{(DIS)}}$ & -0.166, -0.054 & -0.111 & 0.083 & 0.002 & 1.002 & 1635 \\
+ $\beta_{NOX}$ & -1.236, -0.970 & -1.102 & 0.196 & 0.002 & 1.000 & 11994 \\
+ $\sigma_r$ & 0.342, 0.363 & 0.352 & 0.016 & $\approx 0$ & 1.000 & 7770 \\
+$\rho$ & 0.941, 0.966 & 0.952 & 0.019 & $\approx 0$ & 1.001 & 3800 \\
 \hline
 \end{tabular}
 \end{center}
@@ -153,12 +153,12 @@ Given the very small value on $\beta_{CRIM}$ we also trained a model without tha
 \hline
  Parameter & 95\% CI & Mean & SD & SE & $\hat{R}$ & $n_{EFF}$ \\ 
  \hline
- $\beta_0$ & 2.041,  2.312 & 2.177 & 0.203 & 0.004 & 1.001 & 2552 \\
- $\beta_{RM}$ & 0.237, 0.257 & 0.247 & 0.015 & $\approx 0$ & 1.000 & 7170 \\
- $\beta_{\log{(DIS)}}$ & -0.119, 0.003 & -0.061 & 0.085 & 0.004 & 1.009 & 395 \\
- $\beta_{NOX}$ & -1.260, -0.983 & -1.122 & 0.205 & 0.004 & 1.003 & 3205 \\
- $\sigma_r$ & 0.361, 0.381 & 0.371 & 0.015 & $\approx 0$ & 1.002 & 2623 \\
- $\rho$ & 0.952, 0.973 & 0.961 & 0.016 & 0.001 & 1.005 & 947 \\
+ $\beta_0$ & 2.040,  2.312 & 2.176 & 0.202 & 0.002 & 1.000 & 6716 \\
+ $\beta_{RM}$ & 0.237, 0.257 & 0.247 & 0.015 & $\approx 0$ & 1.000 & 20504 \\
+ $\beta_{\log{(DIS)}}$ & -0.116, 0.002 & -0.057 & 0.088 & 0.002 & 1.002 & 1350 \\
+ $\beta_{NOX}$ & -1.267, -0.992 & -1.130 & 0.204 & 0.002 & 1.001 & 8552 \\
+ $\sigma_r$ & 0.361, 0.382 & 0.371 & 0.016 & $\approx 0$ & 1.001 & 7265 \\
+ $\rho$ & 0.953, 0.973 & 0.962 & 0.016 & $\approx 0$ & 1.001 & 2997 \\
  \hline
 \end{tabular}
 \end{center}
@@ -169,7 +169,7 @@ The results themselves are quite interesting. We can see we have the positive re
 
 It is also quite interesting to note that $\rho$ ended up being very nearly one meaning our noise was almost entirely spatially structured. \newline
 
-Given the relatively small value of $\beta_{\log{DIS}}$ and the fact that its 95\% credible interval crosses 0, we also looked at the bayes factor for the hypothesis that $\beta_{\log{DIS}}<0$. The posterior odds were found to be $\approx 3.18$ and given the prior was a normal distribution centered at 0 our prior odds are simply $1$ giving us a bayes factor of $3.18$. Thus there is some weak evidence that the relationship between distance to center of employment and our median housing prices is non-zero. Strong evidence, however, is lacking. \newline
+Given the relatively small value of $\beta_{\log{DIS}}$ and the fact that its 95\% credible interval crosses 0, we also looked at the bayes factor for the hypothesis that $\beta_{\log{DIS}}<0$. The posterior odds were found to be $\approx 2.92$ and given the prior was a normal distribution centered at 0 our prior odds are simply $1$ giving us a bayes factor of $2.92$. Therefore we are just shy of weak evidence for this parameter being non-zero. \newline
 
 All in all then, it seems like our two strongest determinants of housing price are the number of rooms per dwelling and the levels of pollution as indicated by nitric oxide levels. Beyond that we also found that there was significant spatial structure in the median housing prices. All of these conclusions seem reasonable given the context. 
 

@@ -1,0 +1,8 @@
+\contentsline {section}{\numberline {1}Data on Boston Housing Prices in 1978}{2}{}%
+\contentsline {section}{\numberline {2}Defining the Model}{3}{}%
+\contentsline {section}{\numberline {3}Fitting the Model}{5}{}%
+\contentsline {section}{\numberline {4}Results}{5}{}%
+\contentsline {section}{\numberline {5}The Stan Model}{7}{}%
+\contentsline {section}{\numberline {6}Building Inputs}{8}{}%
+\contentsline {section}{\numberline {7}Bibliography}{9}{}%
+\contentsline {section}{\numberline {8}Figures}{10}{}%

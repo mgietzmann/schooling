@@ -4,6 +4,17 @@
 Bivand, Roger, J. N.-R.~L. (2022).
 \newblock spdata: Datasets for spatial analysis.
 
+\bibitem[Bivand and Wong, 2018]{spdep1}
+Bivand, R. and Wong, D. W.~S. (2018).
+\newblock Comparing implementations of global and local indicators of spatial
+  association.
+\newblock {\em TEST}, 27(3):716--748.
+
+\bibitem[Bivand et~al., 2013]{spdep3}
+Bivand, R.~S., Pebesma, E., and Gómez-Rubio, V. (2013).
+\newblock {\em Applied spatial data analysis with {R}, Second edition}.
+\newblock Springer, NY.
+
 \bibitem[David and Rubinfeld, 1978]{origin}
 David, H. and Rubinfeld, D.~L. (1978).
 \newblock Hedonic housing prices and the demand for clean air.
@@ -25,5 +36,35 @@ Moraga, P. (2023).
 \newblock {\em Spatial Statistics for Data Science: Theory and Practice with
   R}.
 \newblock American Fisheries Society.
+
+\bibitem[Pebesma, 2018]{sf2}
+Pebesma, E. (2018).
+\newblock {Simple Features for R: Standardized Support for Spatial Vector
+  Data}.
+\newblock {\em {The R Journal}}, 10(1):439--446.
+
+\bibitem[Pebesma and Bivand, 2023a]{sf1}
+Pebesma, E. and Bivand, R. (2023a).
+\newblock {\em {Spatial Data Science: With applications in R}}.
+\newblock Chapman and Hall/CRC.
+
+\bibitem[Pebesma and Bivand, 2023b]{spdep4}
+Pebesma, E. and Bivand, R.~S. (2023b).
+\newblock {\em Spatial Data Science With Applications in {R}}.
+
+\bibitem[{R Core Team}, 2024]{R}
+{R Core Team} (2024).
+\newblock {\em R: A Language and Environment for Statistical Computing}.
+\newblock R Foundation for Statistical Computing, Vienna, Austria.
+
+\bibitem[{Roger Bivand}, 2022]{spdep2}
+{Roger Bivand} (2022).
+\newblock R packages for analyzing spatial data: A comparative case study with
+  areal data.
+\newblock {\em Geographical Analysis}, 54(3):488--518.
+
+\bibitem[{Stan Development Team}, 2024]{rstan}
+{Stan Development Team} (2024).
+\newblock {\em {RStan}: the {R} interface to {Stan}}.
 
 \end{thebibliography}
